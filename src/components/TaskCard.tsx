@@ -31,7 +31,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onMoreClick, dragHandl
                         className="h-6 w-6 p-0"
                         onClick={(e) => {
                             e.stopPropagation();
-                            console.log('Ícone clicado:', task);
                             onMoreClick?.(task);
                         }}
                     >
