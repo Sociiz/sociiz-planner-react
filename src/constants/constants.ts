@@ -3,8 +3,8 @@ import { type Status } from "../types/types";
 export const COLUMNS: { id: Status; title: string; color: string }[] = [
   { id: "backlog", title: "Backlog", color: "bg-slate-100" },
   { id: "todo", title: "To Do", color: "bg-slate-100" },
-  { id: "progress", title: "In Progress", color: "bg-blue-50" },
-  { id: "done", title: "Done", color: "bg-green-50" },
+  { id: "progress", title: "In Progress", color: "bg-blue-100" },
+  { id: "done", title: "Done", color: "bg-green-200" },
 ];
 
 export const PRIORITY_CLASSES: Record<string, string> = {

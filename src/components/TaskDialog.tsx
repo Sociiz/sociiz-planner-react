@@ -4,7 +4,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,14 +13,12 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue
+    SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { type Task, type Priority, type Status } from '../types/types';
 
-type TaskFormData = Omit<Task, 'tags'> & {
-    tagsInput: string;
-};
+type TaskFormData = Omit<Task, 'tags'> & { tagsInput: string };
 
 interface TaskDialogProps {
     open: boolean;
@@ -34,7 +31,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     open,
     onOpenChange,
     onSubmit,
-    editingTask
+    editingTask,
 }) => {
     const [formData, setFormData] = useState<TaskFormData>({
         id: '',
@@ -44,14 +41,14 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         priority: 'medium',
         assignee: '',
         dueDate: '',
-        tagsInput: ''
+        tagsInput: '',
     });
 
     useEffect(() => {
         if (editingTask) {
             setFormData({
                 ...editingTask,
-                tagsInput: editingTask.tags.join(', ')
+                tagsInput: editingTask.tags.join(', '),
             });
         } else {
             setFormData({
@@ -62,7 +59,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 priority: 'medium',
                 assignee: '',
                 dueDate: '',
-                tagsInput: ''
+                tagsInput: '',
             });
         }
     }, [editingTask, open]);
@@ -78,14 +75,14 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             id: formData.id || Date.now().toString(),
             title: formData.title.trim(),
             description: formData.description?.trim() || '',
-            status: formData.status as Status,
-            priority: formData.priority as Priority,
+            status: formData.status,
+            priority: formData.priority,
             assignee: formData.assignee?.trim() || '',
             dueDate: formData.dueDate || '',
             tags: formData.tagsInput
                 .split(',')
                 .map((t) => t.trim())
-                .filter(Boolean)
+                .filter(Boolean),
         };
 
         onSubmit(newTask);
@@ -94,10 +91,6 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogTrigger asChild>
-                <></>
-            </DialogTrigger>
-
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
@@ -106,8 +99,9 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 <div className="space-y-4">
                     <div>
                         <Label htmlFor="title">Título</Label>
-                        <Input className='mt-2'
+                        <Input
                             id="title"
+                            className="mt-2"
                             value={formData.title}
                             onChange={(e) => handleChange('title', e.target.value)}
                             placeholder="Digite o título da tarefa"
@@ -116,8 +110,9 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
 
                     <div>
                         <Label htmlFor="description">Descrição</Label>
-                        <Textarea className='mt-2'
+                        <Textarea
                             id="description"
+                            className="mt-2"
                             value={formData.description}
                             onChange={(e) => handleChange('description', e.target.value)}
                             placeholder="Adicione detalhes sobre a tarefa"
@@ -126,8 +121,8 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div >
-                            <Label className='mb-2' htmlFor="status">Status</Label>
+                        <div>
+                            <Label className="mb-2" htmlFor="status">Status</Label>
                             <Select
                                 value={formData.status}
                                 onValueChange={(value) => handleChange('status', value as Status)}
@@ -138,13 +133,14 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                 <SelectContent>
                                     <SelectItem value="todo">To Do</SelectItem>
                                     <SelectItem value="progress">In Progress</SelectItem>
+                                    <SelectItem value="review">Review</SelectItem>
                                     <SelectItem value="done">Done</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div>
-                            <Label className='mb-2' htmlFor="priority">Prioridade</Label>
+                            <Label className="mb-2" htmlFor="priority">Prioridade</Label>
                             <Select
                                 value={formData.priority}
                                 onValueChange={(value) => handleChange('priority', value as Priority)}
@@ -163,7 +159,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label className='mb-2' htmlFor="assignee">Responsável</Label>
+                            <Label className="mb-2" htmlFor="assignee">Responsável</Label>
                             <Input
                                 id="assignee"
                                 value={formData.assignee}
@@ -173,7 +169,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                         </div>
 
                         <div>
-                            <Label className='mb-2' htmlFor="dueDate">Data de Entrega</Label>
+                            <Label className="mb-2" htmlFor="dueDate">Data de Entrega</Label>
                             <Input
                                 id="dueDate"
                                 type="date"
@@ -184,7 +180,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                     </div>
 
                     <div>
-                        <Label className='mb-2' htmlFor="tags">Tags (separadas por vírgula)</Label>
+                        <Label className="mb-2" htmlFor="tags">Tags (separadas por vírgula)</Label>
                         <Input
                             id="tags"
                             value={formData.tagsInput}

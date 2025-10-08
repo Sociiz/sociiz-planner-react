@@ -1,30 +1,48 @@
 import React from 'react';
-import { COLUMNS } from '../constants/constants';
-import { type Task } from '../types/types';
-import { TaskCard } from './TaskCard';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { type Task, type Status } from '../types/types';
+import { SortableTaskCard } from './SortableTaskCard';
 
 interface ColumnProps {
-    id: typeof COLUMNS[number]['id'];
+    id: Status;
     title: string;
     color: string;
     tasks: Task[];
-    onTaskClick?: (task: Task) => void;
+    onTaskClick: (task: Task) => void;
 }
 
 export const Column: React.FC<ColumnProps> = ({ id, title, color, tasks, onTaskClick }) => {
+    const { setNodeRef } = useDroppable({
+        id: `column-${id}`,
+    });
+
     return (
-        <div className="flex flex-col">
-            <div className={`${color} rounded-t-lg px-4 py-3 border-b-2 border-slate-300`}>
-                <div className="flex items-center justify-between">
-                    <h2 className="font-semibold text-slate-700">{title}</h2>
-                    <span className="bg-white px-2 py-1 rounded text-sm font-medium text-slate-600">{tasks.length}</span>
-                </div>
+        <div className="flex flex-col h-full">
+            <div className={`${color} text-black px-4 py-3 rounded-t-lg`}>
+                <h2 className="font-semibold flex items-center justify-between">
+                    <span>{title}</span>
+                    <span className="text-sm bg-white/20 px-2 py-1 rounded">{tasks.length}</span>
+                </h2>
             </div>
 
-            <div className="bg-white rounded-b-lg p-4 space-y-3 min-h-[500px] shadow-sm">
-                {tasks.map(task => (
-                    <TaskCard key={task.id} task={task} onClick={onTaskClick} />
-                ))}
+            <div
+                ref={setNodeRef}
+                className="flex-1 bg-slate-50 dark:bg-slate-800 p-4 rounded-b-lg space-y-3 min-h-[500px]"
+            >
+                <SortableContext
+                    items={tasks.map((t) => t.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    {tasks.map((task) => (
+                        <SortableTaskCard
+                            key={task.id}
+                            task={task}
+                            onTaskClick={() => { }}
+                            onMoreClick={onTaskClick}
+                        />
+                    ))}
+                </SortableContext>
             </div>
         </div>
     );
