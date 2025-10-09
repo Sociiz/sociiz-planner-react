@@ -1,14 +1,24 @@
-export type Priority = "low" | "medium" | "high";
+export type Status = "todo" | "inprogress" | "done" | "backlog";
 
-export type Status = "todo" | "progress" | "done" | "backlog";
+export interface Subtask {
+  _id?: string;
+  title: string;
+  assignedTo?: string[];
+  dueDate?: string;
+  done: boolean;
+}
 
 export interface Task {
-  id: string;
+  _id: string;
   title: string;
   description?: string;
   status: Status;
-  priority: Priority;
-  assignee?: string;
-  dueDate?: string;
-  tags: string[];
+  evaluationStatus?: "pending" | "approved" | "rejected";
+  client?: string[];
+  createdBy: string;
+  assignedTo?: string[];
+  tags?: string[];
+  subtasks?: Subtask[];
+  createdAt?: string;
+  updatedAt?: string;
 }

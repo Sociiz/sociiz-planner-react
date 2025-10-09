@@ -1,19 +1,21 @@
+import React, { useEffect } from "react";
 import {
     DndContext,
     DragOverlay,
     closestCorners,
-    type DragOverEvent,
+    type DragEndEvent,
     type DragStartEvent,
     useSensor,
     useSensors,
     PointerSensor,
     KeyboardSensor,
 } from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { COLUMNS } from "@/constants/constants";
 import { Column } from "@/components/Column";
-import { TaskCard } from "@/components/TaskCard";
+import { SortableTaskCard } from "@/components/SortableTaskCard";
 import { type Task, type Status } from "@/types/types";
+import api from "@/services/api";
 
 interface PlannerKanbanProps {
     tasks: Task[];
@@ -35,39 +37,56 @@ export function PlannerKanban({
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
-    const getTasksByStatus = (status: Status) => tasks.filter((t) => t.status === status);
+    const getTasksByStatus = (status: Status) =>
+        tasks.filter((t) => t.status === status);
 
-    const handleDragStart = (event: DragStartEvent) => setActiveId(event.active.id as string);
-    const handleDragEnd = () => setActiveId(null);
+    useEffect(() => {
+        const fetchTasks = async () => {
+            try {
+                const response = await api.get<Task[]>("/tasks");
+                setTasks(response.data);
+            } catch (err) {
+                console.error("Erro ao buscar tasks:", err);
+            }
+        };
+        fetchTasks();
+    }, [setTasks]);
 
-    const handleDragOver = (event: DragOverEvent) => {
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string);
+    };
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        setActiveId(null);
         const { active, over } = event;
         if (!over) return;
 
-        const activeTask = tasks.find((t) => t.id === active.id);
+        const activeTask = tasks.find((t) => t._id === active.id);
         if (!activeTask) return;
 
-        const overId = over.id as string;
-
-        if (overId.startsWith("column-")) {
-            const newStatus = overId.replace("column-", "") as Status;
-            if (activeTask.status !== newStatus) {
-                setTasks((prev) =>
-                    prev.map((t) => (t.id === active.id ? { ...t, status: newStatus } : t))
-                );
-            }
-            return;
+        let newStatus: Status | null = null;
+        if (over.id.toString().startsWith("column-")) {
+            newStatus = over.id.toString().replace("column-", "") as Status;
+        } else {
+            const overTask = tasks.find((t) => t._id === over.id);
+            if (overTask) newStatus = overTask.status;
         }
 
-        const overTask = tasks.find((t) => t.id === overId);
-        if (overTask && activeTask.status !== overTask.status) {
-            setTasks((prev) =>
-                prev.map((t) => (t.id === active.id ? { ...t, status: overTask.status } : t))
-            );
+        if (!newStatus || newStatus === activeTask.status) return;
+
+        const updatedTask = { ...activeTask, status: newStatus };
+        setTasks((prev) =>
+            prev.map((t) => (t._id === activeTask._id ? updatedTask : t))
+        );
+
+        try {
+            await api.put(`/tasks/${activeTask._id}`, updatedTask);
+        } catch (err) {
+            console.error("Erro ao atualizar status da task:", err);
         }
     };
 
-    const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
+    const activeTask = activeId ? tasks.find((t) => t._id === activeId) : null;
 
     return (
         <div className="container mx-auto px-6 py-8">
@@ -75,25 +94,24 @@ export function PlannerKanban({
                 sensors={sensors}
                 collisionDetection={closestCorners}
                 onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <SortableContext items={COLUMNS.map((c) => `column-${c.id}`)}>
-                        {COLUMNS.map((column) => (
-                            <Column
-                                key={column.id}
-                                id={column.id}
-                                title={column.title}
-                                color={column.color}
-                                tasks={getTasksByStatus(column.id)}
-                                onTaskClick={(t) => openDialog(t)}
-                            />
-                        ))}
-                    </SortableContext>
+                    {COLUMNS.map((column) => (
+                        <Column
+                            key={column.id}
+                            id={column.id}
+                            title={column.title}
+                            color={column.color}
+                            tasks={getTasksByStatus(column.id)}
+                            onTaskClick={openDialog}
+                        />
+                    ))}
                 </div>
 
-                <DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>
+                <DragOverlay>
+                    {activeTask ? <SortableTaskCard task={activeTask} /> : null}
+                </DragOverlay>
             </DndContext>
         </div>
     );

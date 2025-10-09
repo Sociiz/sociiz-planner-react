@@ -1,24 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { type Task, type Priority, type Status } from '../types/types';
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/authContext";
+import { type Task } from "@/types/types";
 
-type TaskFormData = Omit<Task, 'tags'> & { tagsInput: string };
+type TaskFormData = Omit<Task, "_id" | "client" | "assignedTo" | "subtasks" | "tags"> & {
+    clientInput: string;
+    assignedToInput: string;
+    subtasksInput: string;
+    tagsInput: string;
+};
 
 interface TaskDialogProps {
     open: boolean;
@@ -33,38 +39,52 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     onSubmit,
     editingTask,
 }) => {
+    const { user } = useAuth();
+
     const [formData, setFormData] = useState<TaskFormData>({
-        id: '',
-        title: '',
-        description: '',
-        status: 'todo',
-        priority: 'medium',
-        assignee: '',
-        dueDate: '',
-        tagsInput: '',
+        title: "",
+        description: "",
+        status: "todo",
+        evaluationStatus: "pending",
+        createdBy: user?.email || "",
+        clientInput: "",
+        assignedToInput: "",
+        subtasksInput: "",
+        tagsInput: "",
     });
 
     useEffect(() => {
         if (editingTask) {
             setFormData({
-                ...editingTask,
-                tagsInput: editingTask.tags.join(', '),
+                title: editingTask.title || "",
+                description: editingTask.description || "",
+                status: editingTask.status || "todo",
+                evaluationStatus: editingTask.evaluationStatus || "pending",
+                createdBy: editingTask.createdBy || user?.email || "",
+                clientInput: editingTask.client?.join(", ") || "",
+                assignedToInput: editingTask.assignedTo?.join(", ") || "",
+                subtasksInput: editingTask.subtasks?.map((s) => s.title).join(", ") || "",
+                tagsInput: editingTask.tags?.join(", ") || "",
             });
         } else {
             setFormData({
-                id: '',
-                title: '',
-                description: '',
-                status: 'todo',
-                priority: 'medium',
-                assignee: '',
-                dueDate: '',
-                tagsInput: '',
+                title: "",
+                description: "",
+                status: "todo",
+                evaluationStatus: "pending",
+                createdBy: user?.email || "",
+                clientInput: "",
+                assignedToInput: "",
+                subtasksInput: "",
+                tagsInput: "",
             });
         }
-    }, [editingTask, open]);
+    }, [editingTask, open, user]);
 
-    const handleChange = <K extends keyof TaskFormData>(field: K, value: TaskFormData[K]) => {
+    const handleChange = <K extends keyof TaskFormData>(
+        field: K,
+        value: TaskFormData[K]
+    ) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -72,15 +92,26 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         if (!formData.title.trim()) return;
 
         const newTask: Task = {
-            id: formData.id || Date.now().toString(),
+            _id: editingTask?._id || "",
             title: formData.title.trim(),
-            description: formData.description?.trim() || '',
+            description: formData.description?.trim() || "",
             status: formData.status,
-            priority: formData.priority,
-            assignee: formData.assignee?.trim() || '',
-            dueDate: formData.dueDate || '',
+            evaluationStatus: formData.evaluationStatus,
+            createdBy: formData.createdBy,
+            client: formData.clientInput
+                .split(",")
+                .map((c) => c.trim())
+                .filter(Boolean),
+            assignedTo: formData.assignedToInput
+                .split(",")
+                .map((a) => a.trim())
+                .filter(Boolean),
+            subtasks: formData.subtasksInput
+                .split(",")
+                .map((title) => ({ title: title.trim(), done: false }))
+                .filter((s) => s.title),
             tags: formData.tagsInput
-                .split(',')
+                .split(",")
                 .map((t) => t.trim())
                 .filter(Boolean),
         };
@@ -93,108 +124,133 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
+                    <DialogTitle>{editingTask ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-4">
+                    {/* Título */}
                     <div>
                         <Label htmlFor="title">Título</Label>
                         <Input
                             id="title"
                             className="mt-2"
                             value={formData.title}
-                            onChange={(e) => handleChange('title', e.target.value)}
+                            onChange={(e) => handleChange("title", e.target.value)}
                             placeholder="Digite o título da tarefa"
                         />
                     </div>
 
+                    {/* Descrição */}
                     <div>
                         <Label htmlFor="description">Descrição</Label>
                         <Textarea
                             id="description"
                             className="mt-2"
                             value={formData.description}
-                            onChange={(e) => handleChange('description', e.target.value)}
+                            onChange={(e) => handleChange("description", e.target.value)}
                             placeholder="Adicione detalhes sobre a tarefa"
                             rows={3}
                         />
                     </div>
 
+                    {/* Status e Avaliação */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label className="mb-2" htmlFor="status">Status</Label>
+                            <Label htmlFor="status">Status</Label>
                             <Select
                                 value={formData.status}
-                                onValueChange={(value) => handleChange('status', value as Status)}
+                                onValueChange={(v) => handleChange("status", v as Task["status"])}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="backlog">Backlog</SelectItem>
                                     <SelectItem value="todo">To Do</SelectItem>
-                                    <SelectItem value="progress">In Progress</SelectItem>
-                                    <SelectItem value="review">Review</SelectItem>
+                                    <SelectItem value="inprogress">In Progress</SelectItem>
                                     <SelectItem value="done">Done</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div>
-                            <Label className="mb-2" htmlFor="priority">Prioridade</Label>
+                            <Label htmlFor="evaluationStatus">Avaliação</Label>
                             <Select
-                                value={formData.priority}
-                                onValueChange={(value) => handleChange('priority', value as Priority)}
+                                value={formData.evaluationStatus}
+                                onValueChange={(v) =>
+                                    handleChange("evaluationStatus", v as Task["evaluationStatus"])
+                                }
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="low">Baixa</SelectItem>
-                                    <SelectItem value="medium">Média</SelectItem>
-                                    <SelectItem value="high">Alta</SelectItem>
+                                    <SelectItem value="pending">Pendente</SelectItem>
+                                    <SelectItem value="approved">Aprovada</SelectItem>
+                                    <SelectItem value="rejected">Rejeitada</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label className="mb-2" htmlFor="assignee">Responsável</Label>
-                            <Input
-                                id="assignee"
-                                value={formData.assignee}
-                                onChange={(e) => handleChange('assignee', e.target.value)}
-                                placeholder="Nome do responsável"
-                            />
-                        </div>
-
-                        <div>
-                            <Label className="mb-2" htmlFor="dueDate">Data de Entrega</Label>
-                            <Input
-                                id="dueDate"
-                                type="date"
-                                value={formData.dueDate}
-                                onChange={(e) => handleChange('dueDate', e.target.value)}
-                            />
-                        </div>
-                    </div>
-
+                    {/* Clientes */}
                     <div>
-                        <Label className="mb-2" htmlFor="tags">Tags (separadas por vírgula)</Label>
+                        <Label htmlFor="client">Clientes (separados por vírgula)</Label>
                         <Input
-                            id="tags"
-                            value={formData.tagsInput}
-                            onChange={(e) => handleChange('tagsInput', e.target.value)}
-                            placeholder="frontend, urgente, design"
+                            id="client"
+                            value={formData.clientInput}
+                            onChange={(e) => handleChange("clientInput", e.target.value)}
+                            placeholder="DETRAN-AL, Prefeitura"
                         />
                     </div>
 
+                    {/* Responsáveis */}
+                    <div>
+                        <Label htmlFor="assignedTo">Responsáveis (separados por vírgula)</Label>
+                        <Input
+                            id="assignedTo"
+                            value={formData.assignedToInput}
+                            onChange={(e) => handleChange("assignedToInput", e.target.value)}
+                            placeholder="Arthur, Maria"
+                        />
+                    </div>
+
+                    {/* Subtarefas */}
+                    <div>
+                        <Label htmlFor="subtasks">Subtarefas (separadas por vírgula)</Label>
+                        <Input
+                            id="subtasks"
+                            value={formData.subtasksInput}
+                            onChange={(e) => handleChange("subtasksInput", e.target.value)}
+                            placeholder="Criar calendário, Definir orçamento"
+                        />
+                    </div>
+
+                    {/* Tags */}
+                    <div>
+                        <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+                        <Input
+                            id="tags"
+                            value={formData.tagsInput}
+                            onChange={(e) => handleChange("tagsInput", e.target.value)}
+                            placeholder="frontend, urgente"
+                        />
+                    </div>
+
+                    {/* Botões */}
                     <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                        >
                             Cancelar
                         </Button>
-                        <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white">
-                            {editingTask ? 'Salvar' : 'Criar'}
+                        <Button
+                            onClick={handleSubmit}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                            {editingTask ? "Salvar" : "Criar"}
                         </Button>
                     </div>
                 </div>

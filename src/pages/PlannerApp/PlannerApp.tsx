@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/authContext";
 import { useNavigate } from "react-router-dom";
 import { TaskDialog } from "@/components/TaskDialog";
 import { type Task } from "@/types/types";
-import { INITIAL_TASKS } from "@/data/data";
 import { useTheme } from "@/components/theme-provider";
 import { PlannerHeader } from "./PlannerHeader";
 import { PlannerKanban } from "./PlannerKanban";
+import api from "@/services/api";
 
 export default function PlannerApp() {
-    const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -19,15 +19,45 @@ export default function PlannerApp() {
     const navigate = useNavigate();
 
     const openDialog = (task?: Task | null) => {
-        setEditingTask(task ?? null);
+        setEditingTask(task ?? null); // se não tiver task, é nova
         setIsDialogOpen(true);
     };
 
-    const handleSubmit = (task: Task) => {
-        if (editingTask) {
-            setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)));
-        } else {
-            setTasks((prev) => [...prev, task]);
+    const refreshTasks = async () => {
+        try {
+            const response = await api.get<Task[]>("/tasks");
+            setTasks(response.data);
+        } catch (err) {
+            console.error("Erro ao buscar tasks:", err);
+        }
+    };
+
+    useEffect(() => {
+        refreshTasks();
+    }, []);
+
+    const handleSubmit = async (task: Task) => {
+        try {
+            // 🧹 Remove subtasks vazias antes de enviar
+            const validSubtasks = (task.subtasks || []).filter(
+                (s) => s.title && s.title.trim() !== ""
+            );
+
+            const payload = { ...task, subtasks: validSubtasks };
+
+            if (editingTask) {
+                const response = await api.put(`/tasks/${task._id}`, payload);
+                setTasks(prev => prev.map(t => (t._id === task._id ? response.data : t)));
+            } else {
+                const response = await api.post("/tasks", payload);
+                setTasks(prev => [...prev, response.data]);
+            }
+
+            setIsDialogOpen(false);
+            setEditingTask(null);
+            refreshTasks();
+        } catch (err) {
+            console.error("Erro ao salvar task:", err);
         }
     };
 
@@ -38,7 +68,6 @@ export default function PlannerApp() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
-            {/* Header */}
             <PlannerHeader
                 theme={theme}
                 setTheme={setTheme}
@@ -46,7 +75,6 @@ export default function PlannerApp() {
                 onLogout={handleLogout}
             />
 
-            {/* Kanban */}
             <PlannerKanban
                 tasks={tasks}
                 setTasks={setTasks}
@@ -55,7 +83,6 @@ export default function PlannerApp() {
                 setActiveId={setActiveId}
             />
 
-            {/* Dialog de Tarefa */}
             <TaskDialog
                 open={isDialogOpen}
                 onOpenChange={setIsDialogOpen}

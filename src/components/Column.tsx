@@ -1,8 +1,8 @@
-import React from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { type Task, type Status } from '../types/types';
-import { SortableTaskCard } from './SortableTaskCard';
+import React from "react";
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableTaskCard } from "./SortableTaskCard";
+import { type Task, type Status } from "@/types/types";
 
 interface ColumnProps {
     id: Status;
@@ -13,9 +13,7 @@ interface ColumnProps {
 }
 
 export const Column: React.FC<ColumnProps> = ({ id, title, color, tasks, onTaskClick }) => {
-    const { setNodeRef } = useDroppable({
-        id: `column-${id}`,
-    });
+    const { setNodeRef } = useDroppable({ id: `column-${id}` });
 
     return (
         <div className="flex flex-col h-full">
@@ -30,15 +28,11 @@ export const Column: React.FC<ColumnProps> = ({ id, title, color, tasks, onTaskC
                 ref={setNodeRef}
                 className="flex-1 bg-slate-50 dark:bg-slate-800 p-4 rounded-b-lg space-y-3 min-h-[500px]"
             >
-                <SortableContext
-                    items={tasks.map((t) => t.id)}
-                    strategy={verticalListSortingStrategy}
-                >
+                <SortableContext items={tasks.map((t) => t._id!)} strategy={verticalListSortingStrategy}>
                     {tasks.map((task) => (
                         <SortableTaskCard
-                            key={task.id}
+                            key={task._id}
                             task={task}
-                            onTaskClick={() => { }}
                             onMoreClick={onTaskClick}
                         />
                     ))}

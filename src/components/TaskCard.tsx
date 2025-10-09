@@ -1,9 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tag, User, Calendar, MoreVertical, GripVertical } from 'lucide-react';
+import { Tag, User, MoreVertical, GripVertical } from 'lucide-react';
 import { type Task } from '../types/types';
-import { PRIORITY_CLASSES } from '../constants/constants';
 
 interface TaskCardProps {
     task: Task;
@@ -47,7 +46,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onMoreClick, dragHandl
                 )}
 
                 <div className="flex flex-wrap gap-1">
-                    {task.tags.map((tag, idx) => (
+                    {task.tags?.map((tag, idx) => (
                         <span
                             key={idx}
                             className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
@@ -60,29 +59,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onMoreClick, dragHandl
 
                 <div className="flex items-center justify-between pt-2 border-t dark:border-slate-700">
                     <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
-                        {task.assignee && (
-                            <div className="flex items-center gap-1">
+                        {task.assignedTo?.map((user, idx) => (
+                            <div key={idx} className="flex items-center gap-1">
                                 <User className="w-3 h-3" />
-                                <span>{task.assignee}</span>
+                                <span>{user}</span>
                             </div>
-                        )}
-                        {task.dueDate && (
-                            <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                <span>{new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                        )}
+                        ))}
                     </div>
 
-                    <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${PRIORITY_CLASSES[task.priority]}`}
-                    >
-                        {task.priority === 'high'
-                            ? 'Alta'
-                            : task.priority === 'medium'
-                                ? 'Média'
-                                : 'Baixa'}
-                    </span>
+                    {task.subtasks && task.subtasks.length > 0 && (
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                            {task.subtasks.filter(st => st.done).length}/{task.subtasks.length}
+                        </span>
+                    )}
                 </div>
             </CardContent>
         </Card>

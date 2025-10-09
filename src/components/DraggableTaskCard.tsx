@@ -8,7 +8,7 @@ interface Props {
 }
 
 export const DraggableTaskCard: React.FC<Props> = ({ task, onClick }) => {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task._id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
