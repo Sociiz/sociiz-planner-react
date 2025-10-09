@@ -26,6 +26,10 @@ export const AssignModal: React.FC<AssignModalProps> = ({
     onClose,
     onSave,
 }) => {
+    const removeUser = (id: string) => {
+        onChange(selectedUsers.filter((u) => u !== id));
+    };
+
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-md rounded-2xl">
@@ -33,6 +37,30 @@ export const AssignModal: React.FC<AssignModalProps> = ({
                     <DialogTitle>Atribuir responsáveis</DialogTitle>
                 </DialogHeader>
 
+                {/* Badge com x para remover */}
+                <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedUsers.map((id) => {
+                        const userObj = users.find((u) => u._id === id);
+                        if (!userObj) return null;
+                        return (
+                            <div
+                                key={id}
+                                className="flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium"
+                            >
+                                {userObj.username}
+                                <button
+                                    type="button"
+                                    className="ml-1 text-blue-600 hover:text-red-500"
+                                    onClick={() => removeUser(id)}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Adicionar novos usuários */}
                 <div className="mt-2">
                     <TaskSelect
                         label="Selecionar usuários"

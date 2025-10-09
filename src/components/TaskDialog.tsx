@@ -135,7 +135,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
 
                             <TaskSelect
                                 label="Avaliação"
-                                value={formData.evaluationStatus || "pending"} 
+                                value={formData.evaluationStatus || "pending"}
                                 options={[
                                     { label: "Pendente", value: "pending" },
                                     { label: "Aprovada", value: "approved" },
@@ -152,16 +152,40 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                             />
                         </div>
 
+                        {/* Responsáveis com X para remover */}
                         <TaskSelect
                             label="Responsáveis"
                             value={formData.assignedToInput}
-                            options={users.map((u) => ({
-                                label: u.username,
-                                value: u._id,
-                            }))}
+                            options={users.map((u) => ({ label: u.username, value: u._id }))}
                             onChange={(v) => handleChange("assignedToInput", Array.isArray(v) ? v : [v])}
                             multiple
                         />
+                        <div className="flex flex-wrap gap-2 mt-1">
+                            {formData.assignedToInput.map((userId) => {
+                                const userObj = users.find((u) => u._id === userId);
+                                if (!userObj) return null;
+                                return (
+                                    <div
+                                        key={userId}
+                                        className="flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium"
+                                    >
+                                        {userObj.username}
+                                        <button
+                                            type="button"
+                                            className="ml-1 text-blue-600 hover:text-red-500"
+                                            onClick={() =>
+                                                handleChange(
+                                                    "assignedToInput",
+                                                    formData.assignedToInput.filter((id) => id !== userId)
+                                                )
+                                            }
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
 
                         <div>
                             <span className="font-semibold">Subtarefas</span>
@@ -171,6 +195,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                         key={index}
                                         index={index}
                                         subtask={subtask}
+                                        users={users}
                                         onUpdate={(idx, updated) => {
                                             const newArray = [...formData.subtasksInputArray];
                                             newArray[idx] = updated;
