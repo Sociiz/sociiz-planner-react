@@ -3,18 +3,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { XCircle, Save, Plus } from "lucide-react";
 import { useAuth } from "@/context/authContext";
-import { type Task, type Subtask } from "@/types/types";
+import { type Task, type Subtask, type Status, type EvaluationStatus } from "@/types/types";
 import { TaskFormField } from "./TaskDialog/TaskFormField";
 import { TaskSelect } from "./TaskDialog/TaskSelect";
 import { SubtaskItem } from "./TaskDialog/SubtaskItem";
 import { AssignModal } from "./TaskDialog/AssignModal";
 
-type TaskFormData = Omit<
-    Task,
-    "_id" | "client" | "assignedTo" | "subtasks" | "tags"
-> & {
+type TaskFormData = Omit<Task, "_id" | "client" | "assignedTo" | "subtasks" | "tags"> & {
     clientInput: string;
-    assignedToInput: string;
+    assignedToInput: string[];
     tagsInput: string;
     subtasksInputArray: Subtask[];
     dueDate?: string;
@@ -25,9 +22,16 @@ interface TaskDialogProps {
     onOpenChange: (open: boolean) => void;
     onSubmit: (task: Task) => void;
     editingTask?: Task | null;
+    users: { _id: string; username: string }[];
 }
 
-export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, onSubmit, editingTask }) => {
+export const TaskDialog: React.FC<TaskDialogProps> = ({
+    open,
+    onOpenChange,
+    onSubmit,
+    editingTask,
+    users,
+}) => {
     const { user } = useAuth();
     const [formData, setFormData] = useState<TaskFormData>({
         title: "",
@@ -36,13 +40,13 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, onSu
         evaluationStatus: "pending",
         createdBy: user?.email || "",
         clientInput: "",
-        assignedToInput: "",
+        assignedToInput: [],
         tagsInput: "",
         subtasksInputArray: [],
         dueDate: "",
     });
     const [subtaskAssignIndex, setSubtaskAssignIndex] = useState<number | null>(null);
-    const [assignInput, setAssignInput] = useState("");
+    const [assignUsers, setAssignUsers] = useState<string[]>([]);
 
     useEffect(() => {
         if (editingTask) {
@@ -53,7 +57,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, onSu
                 evaluationStatus: editingTask.evaluationStatus || "pending",
                 createdBy: editingTask.createdBy || user?.email || "",
                 clientInput: editingTask.client?.join(", ") || "",
-                assignedToInput: editingTask.assignedTo?.join(", ") || "",
+                assignedToInput: editingTask.assignedTo || [],
                 tagsInput: editingTask.tags?.join(", ") || "",
                 subtasksInputArray: editingTask.subtasks || [],
                 dueDate: editingTask.dueDate || "",
@@ -61,18 +65,8 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, onSu
         }
     }, [editingTask, open, user]);
 
-    const handleChange = <K extends keyof TaskFormData>(field: K, value: TaskFormData[K]) =>
+    const handleChange = <K extends keyof TaskFormData>(field: K, value: unknown) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
-
-    const handleSubtaskUpdate = (index: number, updated: Subtask) => {
-        const newArray = [...formData.subtasksInputArray];
-        newArray[index] = updated;
-        setFormData((prev) => ({ ...prev, subtasksInputArray: newArray }));
-    };
-
-    const handleSubtaskDelete = (index: number) => {
-        const newArray = formData.subtasksInputArray.filter((_, i) => i !== index);
-        setFormData((prev) => ({ ...prev, subtasksInputArray: newArray }));
     };
 
     const handleSubmit = () => {
@@ -85,7 +79,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, onSu
             evaluationStatus: formData.evaluationStatus,
             createdBy: formData.createdBy,
             client: formData.clientInput.split(",").map((c) => c.trim()).filter(Boolean),
-            assignedTo: formData.assignedToInput.split(",").map((a) => a.trim()).filter(Boolean),
+            assignedTo: formData.assignedToInput,
             subtasks: formData.subtasksInputArray,
             tags: formData.tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
             dueDate: formData.dueDate,
@@ -104,58 +98,117 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, onSu
                     </DialogHeader>
 
                     <div className="space-y-5 mt-2">
-                        <TaskFormField label="Título" value={formData.title} onChange={(v) => handleChange("title", v)} placeholder="Digite o título da tarefa" />
-                        <TaskFormField label="Descrição" value={formData.description || ""} onChange={(v) => handleChange("description", v)} placeholder="Adicione detalhes sobre a tarefa" textarea />
-                        <div className="flex flex-row justify-between gap-4">
-                            <TaskFormField label="Data de Entrega" type="date" value={formData.dueDate || ""} onChange={(v) => handleChange("dueDate", v)} />
-                            <TaskSelect label="Status" value={formData.status} options={[
-                                { label: "Backlog", value: "backlog" },
-                                { label: "A Fazer", value: "todo" },
-                                { label: "Em Progresso", value: "inprogress" },
-                                { label: "Concluído", value: "done" },
-                            ]} onChange={(v) => handleChange("status", v)} />
-                            <TaskSelect label="Avaliação" value={formData.evaluationStatus} options={[
-                                { label: "Pendente", value: "pending" },
-                                { label: "Aprovada", value: "approved" },
-                                { label: "Rejeitada", value: "rejected" },
-                            ]} onChange={(v) => handleChange("evaluationStatus", v)} />
-                        </div>
-                        <TaskFormField label="Clientes" value={formData.clientInput} onChange={(v) => handleChange("clientInput", v)} placeholder="Ex: DETRAN-AL, Prefeitura" />
-                        <TaskFormField label="Responsáveis" value={formData.assignedToInput} onChange={(v) => handleChange("assignedToInput", v)} placeholder="Ex: Arthur, Maria" />
+                        <TaskFormField
+                            label="Título"
+                            value={formData.title}
+                            onChange={(v) => handleChange("title", v)}
+                            placeholder="Digite o título da tarefa"
+                        />
 
-                        {/* Subtasks */}
+                        <TaskFormField
+                            label="Descrição"
+                            value={formData.description || ""}
+                            onChange={(v) => handleChange("description", v)}
+                            placeholder="Adicione detalhes sobre a tarefa"
+                            textarea
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <TaskFormField
+                                label="Data de Entrega"
+                                type="date"
+                                value={formData.dueDate || ""}
+                                onChange={(v) => handleChange("dueDate", v)}
+                            />
+
+                            <TaskSelect
+                                label="Status"
+                                value={formData.status}
+                                options={[
+                                    { label: "Backlog", value: "backlog" },
+                                    { label: "A Fazer", value: "todo" },
+                                    { label: "Em Progresso", value: "inprogress" },
+                                    { label: "Concluído", value: "done" },
+                                ]}
+                                onChange={(v) => handleChange("status", v as Status)}
+                            />
+
+                            <TaskSelect
+                                label="Avaliação"
+                                value={formData.evaluationStatus || "pending"} 
+                                options={[
+                                    { label: "Pendente", value: "pending" },
+                                    { label: "Aprovada", value: "approved" },
+                                    { label: "Rejeitada", value: "rejected" },
+                                ]}
+                                onChange={(v) => handleChange("evaluationStatus", v as EvaluationStatus)}
+                            />
+
+                            <TaskFormField
+                                label="Clientes"
+                                value={formData.clientInput}
+                                onChange={(v) => handleChange("clientInput", v)}
+                                placeholder="Ex: DETRAN-AL, Prefeitura"
+                            />
+                        </div>
+
+                        <TaskSelect
+                            label="Responsáveis"
+                            value={formData.assignedToInput}
+                            options={users.map((u) => ({
+                                label: u.username,
+                                value: u._id,
+                            }))}
+                            onChange={(v) => handleChange("assignedToInput", Array.isArray(v) ? v : [v])}
+                            multiple
+                        />
+
                         <div>
-                            <div className="flex justify-between items-center">
-                                <span className="font-semibold">Subtarefas</span>
-                            </div>
+                            <span className="font-semibold">Subtarefas</span>
                             <div className="space-y-2 mt-2">
                                 {formData.subtasksInputArray.map((subtask, index) => (
                                     <SubtaskItem
                                         key={index}
                                         index={index}
                                         subtask={subtask}
-                                        onUpdate={handleSubtaskUpdate}
-                                        onDelete={handleSubtaskDelete}
+                                        onUpdate={(idx, updated) => {
+                                            const newArray = [...formData.subtasksInputArray];
+                                            newArray[idx] = updated;
+                                            handleChange("subtasksInputArray", newArray);
+                                        }}
+                                        onDelete={(idx) => {
+                                            const newArray = formData.subtasksInputArray.filter((_, i) => i !== idx);
+                                            handleChange("subtasksInputArray", newArray);
+                                        }}
                                         onAssignClick={(idx) => {
                                             setSubtaskAssignIndex(idx);
-                                            setAssignInput(subtask.assignedTo?.join(", ") || "");
+                                            setAssignUsers(subtask.assignedTo || []);
                                         }}
                                     />
                                 ))}
-                                <Button type="button" variant="outline" className="w-full mt-2" onClick={() =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        subtasksInputArray: [...prev.subtasksInputArray, { title: "", done: false, assignedTo: [], dueDate: "" }],
-                                    }))
-                                }>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full mt-2"
+                                    onClick={() =>
+                                        handleChange("subtasksInputArray", [
+                                            ...formData.subtasksInputArray,
+                                            { title: "", done: false, assignedTo: [], dueDate: "" },
+                                        ])
+                                    }
+                                >
                                     <Plus className="h-4 w-4 mr-2" /> Adicionar Subtarefa
                                 </Button>
                             </div>
                         </div>
 
-                        <TaskFormField label="Tags" value={formData.tagsInput} onChange={(v) => handleChange("tagsInput", v)} placeholder="frontend, urgente" />
+                        <TaskFormField
+                            label="Tags"
+                            value={formData.tagsInput}
+                            onChange={(v) => handleChange("tagsInput", v)}
+                            placeholder="frontend, urgente"
+                        />
 
-                        {/* Botões */}
                         <div className="flex justify-end gap-2 pt-4">
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                                 <XCircle className="h-4 w-4 mr-1" /> Cancelar
@@ -168,17 +221,17 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({ open, onOpenChange, onSu
                 </DialogContent>
             </Dialog>
 
-            {/* Modal de atribuir responsáveis */}
             <AssignModal
                 open={subtaskAssignIndex !== null}
-                value={assignInput}
-                onChange={setAssignInput}
+                users={users}
+                selectedUsers={assignUsers}
+                onChange={setAssignUsers}
                 onClose={() => setSubtaskAssignIndex(null)}
                 onSave={() => {
                     if (subtaskAssignIndex === null) return;
                     const updated = [...formData.subtasksInputArray];
-                    updated[subtaskAssignIndex].assignedTo = assignInput.split(",").map((n) => n.trim()).filter(Boolean);
-                    setFormData((prev) => ({ ...prev, subtasksInputArray: updated }));
+                    updated[subtaskAssignIndex].assignedTo = assignUsers;
+                    handleChange("subtasksInputArray", updated);
                     setSubtaskAssignIndex(null);
                 }}
             />

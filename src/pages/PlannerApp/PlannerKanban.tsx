@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
     DndContext,
     DragOverlay,
@@ -14,7 +14,7 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { COLUMNS } from "@/constants/constants";
 import { Column } from "@/components/Column";
 import { SortableTaskCard } from "@/components/SortableTaskCard";
-import { type Task, type Status } from "@/types/types";
+import { type Task, type Status, type User } from "@/types/types";
 import api from "@/services/api";
 
 interface PlannerKanbanProps {
@@ -32,6 +32,8 @@ export function PlannerKanban({
     activeId,
     setActiveId,
 }: PlannerKanbanProps) {
+    const [users, setUsers] = useState<User[]>([]);
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -41,15 +43,19 @@ export function PlannerKanban({
         tasks.filter((t) => t.status === status);
 
     useEffect(() => {
-        const fetchTasks = async () => {
+        const fetchData = async () => {
             try {
-                const response = await api.get<Task[]>("/tasks");
-                setTasks(response.data);
+                const [tasksRes, usersRes] = await Promise.all([
+                    api.get<Task[]>("/tasks"),
+                    api.get<User[]>("/users"),
+                ]);
+                setTasks(tasksRes.data);
+                setUsers(usersRes.data);
             } catch (err) {
-                console.error("Erro ao buscar tasks:", err);
+                console.error("Erro ao buscar dados:", err);
             }
         };
-        fetchTasks();
+        fetchData();
     }, [setTasks]);
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -105,12 +111,13 @@ export function PlannerKanban({
                             color={column.color}
                             tasks={getTasksByStatus(column.id)}
                             onTaskClick={openDialog}
+                            users={users}
                         />
                     ))}
                 </div>
 
                 <DragOverlay>
-                    {activeTask ? <SortableTaskCard task={activeTask} /> : null}
+                    {activeTask ? <SortableTaskCard task={activeTask} users={users} /> : null}
                 </DragOverlay>
             </DndContext>
         </div>

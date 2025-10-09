@@ -10,6 +10,7 @@ export default function Register() {
     const { register } = useAuth()
     const navigate = useNavigate()
     const [email, setEmail] = useState("")
+    const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
 
@@ -17,7 +18,7 @@ export default function Register() {
         e.preventDefault()
         setError("")
         try {
-            await register(email, password)
+            await register(email, password, username)
             navigate("/planner")
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
@@ -33,6 +34,15 @@ export default function Register() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <Label className="mb-2">Usuario</Label>
+                            <Input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                            />
+                        </div>
                         <div>
                             <Label className="mb-2">Email</Label>
                             <Input

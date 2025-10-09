@@ -1,16 +1,19 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tag, User, MoreVertical, GripVertical, Calendar } from 'lucide-react';
-import { type Task } from '../types/types';
+import { Tag, User as UserIcon, MoreVertical, GripVertical, Calendar } from 'lucide-react';
+import { type Task, type User } from '../types/types';
 
 interface TaskCardProps {
     task: Task;
+    users: User[];
     onMoreClick?: (task: Task) => void;
     dragHandleProps?: React.SVGProps<SVGSVGElement>;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onMoreClick, dragHandleProps }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, dragHandleProps }) => {
+    const assignedUsers = task.assignedTo?.map(id => users.find(u => u._id === id)?.username || 'Desconhecido');
+
     return (
         <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-blue-500">
             <CardHeader className="p-4 pb-2 flex justify-between items-start">
@@ -57,7 +60,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onMoreClick, dragHandl
                     ))}
                 </div>
 
-                {/* Data de entrega */}
                 {task.dueDate && (
                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
                         <Calendar className="w-3 h-3" /> {new Date(task.dueDate).toLocaleDateString()}
@@ -66,10 +68,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onMoreClick, dragHandl
 
                 <div className="flex items-center justify-between pt-2 border-t dark:border-slate-700">
                     <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
-                        {task.assignedTo?.map((user, idx) => (
+                        {assignedUsers?.map((name, idx) => (
                             <div key={idx} className="flex items-center gap-1">
-                                <User className="w-3 h-3" />
-                                <span>{user}</span>
+                                <UserIcon className="w-3 h-3" />
+                                <span>{name}</span>
                             </div>
                         ))}
                     </div>

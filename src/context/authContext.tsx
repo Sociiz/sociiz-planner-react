@@ -11,7 +11,7 @@ interface AuthContextType {
     token: string | null;
     loading: boolean;
     login: (email: string, password: string) => Promise<void>;
-    register: (email: string, password: string) => Promise<void>;
+    register: (email: string, password: string, username: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [token, setToken] = useState<string | null>(storedToken);
     const [user, setUser] = useState<User | null>(
         initialUser
-            ? { id: initialUser.id, email: initialUser.email, }
+            ? { id: initialUser.id, email: initialUser.email }
             : null
     );
     const [loading, setLoading] = useState(false);
@@ -59,13 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }
 
-    async function register(email: string, password: string) {
+    async function register(email: string, password: string, username: string) {
         setLoading(true);
         try {
             const res = await fetch("http://localhost:3000/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, username }),
             });
 
             if (!res.ok) {
