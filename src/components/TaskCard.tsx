@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tag, User, MoreVertical, GripVertical } from 'lucide-react';
+import { Tag, User, MoreVertical, GripVertical, Calendar } from 'lucide-react';
 import { type Task } from '../types/types';
 
 interface TaskCardProps {
@@ -56,6 +56,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onMoreClick, dragHandl
                         </span>
                     ))}
                 </div>
+
+                {/* Data de entrega */}
+                {task.dueDate && (
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> {new Date(task.dueDate).toLocaleDateString()}
+                    </div>
+                )}
 
                 <div className="flex items-center justify-between pt-2 border-t dark:border-slate-700">
                     <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">

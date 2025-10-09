@@ -21,4 +21,5 @@ export interface Task {
   subtasks?: Subtask[];
   createdAt?: string;
   updatedAt?: string;
+  dueDate?: string;
 }
