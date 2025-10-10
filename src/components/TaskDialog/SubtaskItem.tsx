@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Trash2 } from "lucide-react";
 import { type Subtask } from "@/types/types";
+import { UserPlus, Trash2 } from "lucide-react";
 
 interface SubtaskItemProps {
     subtask: Subtask;
@@ -21,27 +21,58 @@ export const SubtaskItem: React.FC<SubtaskItemProps> = ({
     onDelete,
     onAssignClick,
 }) => {
+    const [editingTitle, setEditingTitle] = useState(false);
+    const [currentTitle, setCurrentTitle] = useState(subtask.title);
+
     const handleFieldChange = (field: keyof Subtask, value: unknown) => {
         onUpdate(index, { ...subtask, [field]: value });
     };
 
-    const getUsername = (id: string) =>
-        users.find((u) => u._id === id)?.username || "Desconhecido";
+    const handleTitleBlur = () => {
+        if (currentTitle.trim() !== subtask.title) {
+            handleFieldChange("title", currentTitle.trim());
+        }
+        setEditingTitle(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") handleTitleBlur();
+        else if (e.key === "Escape") {
+            setCurrentTitle(subtask.title);
+            setEditingTitle(false);
+        }
+    };
+
+    const getUsername = (id: string) => users.find((u) => u._id === id)?.username || "Desconhecido";
 
     return (
         <div className="flex items-center gap-3 border rounded-xl p-2 bg-muted/40 hover:bg-muted/60 transition">
+            {/* Checkbox */}
             <input
                 type="checkbox"
                 checked={subtask.done}
                 onChange={(e) => handleFieldChange("done", e.target.checked)}
                 className="h-4 w-4 accent-blue-600"
             />
-            <Input
-                value={subtask.title}
-                onChange={(e) => handleFieldChange("title", e.target.value)}
-                placeholder="Título da subtask"
-                className="flex-1"
-            />
+
+            {/* Título editável */}
+            {editingTitle ? (
+                <Input
+                    value={currentTitle}
+                    onChange={(e) => setCurrentTitle(e.target.value)}
+                    onBlur={handleTitleBlur}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                    className="flex-1"
+                />
+            ) : (
+                <span
+                    className={`flex-1 cursor-pointer ${subtask.done ? "line-through text-gray-500" : ""}`}
+                    onClick={() => setEditingTitle(true)}
+                >
+                    {subtask.title || "Nova Subtarefa"}
+                </span>
+            )}
 
             {/* Data em formato pill */}
             <div className="relative">
@@ -54,9 +85,7 @@ export const SubtaskItem: React.FC<SubtaskItemProps> = ({
                 />
                 <span
                     className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm text-center cursor-pointer w-24"
-                    onClick={() =>
-                        document.getElementById(`subtask-date-${index}`)?.click()
-                    }
+                    onClick={() => document.getElementById(`subtask-date-${index}`)?.click()}
                 >
                     {subtask.dueDate
                         ? new Date(subtask.dueDate).toLocaleDateString("pt-BR")
@@ -64,7 +93,7 @@ export const SubtaskItem: React.FC<SubtaskItemProps> = ({
                 </span>
             </div>
 
-            {/* Avatares com nomes */}
+            {/* Avatares */}
             <div className="flex -space-x-2">
                 {subtask.assignedTo?.slice(0, 3).map((userId) => {
                     const username = getUsername(userId);
@@ -88,6 +117,7 @@ export const SubtaskItem: React.FC<SubtaskItemProps> = ({
                 )}
             </div>
 
+            {/* Botões */}
             <Button
                 type="button"
                 variant="ghost"

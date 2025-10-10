@@ -1,97 +1,79 @@
-import React from "react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Save, XCircle } from "lucide-react";
-import { TaskSelect } from "./TaskSelect";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { type User } from "@/types/types";
 
 interface AssignModalProps {
     open: boolean;
-    users: { _id: string; username: string }[];
-    selectedUsers: string[];
-    onChange: (value: string[]) => void;
-    onClose: () => void;
-    onSave: () => void;
+    onOpenChange: (open: boolean) => void;
+    users: User[];
+    assignedUsers: string[];
+    onAssign: (assigned: string[]) => void;
 }
 
 export const AssignModal: React.FC<AssignModalProps> = ({
     open,
+    onOpenChange,
     users,
-    selectedUsers,
-    onChange,
-    onClose,
-    onSave,
+    assignedUsers,
+    onAssign,
 }) => {
-    const removeUser = (id: string) => {
-        onChange(selectedUsers.filter((u) => u !== id));
+    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+
+    useEffect(() => {
+        setSelectedUsers(assignedUsers);
+    }, [assignedUsers]);
+
+    const handleToggleUser = (userId: string) => {
+        setSelectedUsers((prev) =>
+            prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+        );
+    };
+
+    const handleSave = () => {
+        onAssign(selectedUsers);
+        onOpenChange(false);
     };
 
     return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="max-w-md rounded-2xl">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Atribuir responsáveis</DialogTitle>
+                    <DialogTitle>Atribuir Usuários</DialogTitle>
                 </DialogHeader>
-
-                {/* Badge com x para remover */}
-                <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedUsers.map((id) => {
-                        const userObj = users.find((u) => u._id === id);
-                        if (!userObj) return null;
-                        return (
-                            <div
-                                key={id}
-                                className="flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium"
-                            >
-                                {userObj.username}
-                                <button
-                                    type="button"
-                                    className="ml-1 text-blue-600 hover:text-red-500"
-                                    onClick={() => removeUser(id)}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        );
-                    })}
+                <div className="grid gap-4 py-4">
+                    <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                        {users.length === 0 ? (
+                            <p className="text-center text-gray-500">Nenhum usuário disponível.</p>
+                        ) : (
+                            users.map((user) => (
+                                <div key={user._id} className="flex items-center space-x-2 py-1">
+                                    <Checkbox
+                                        id={`user-${user._id}`}
+                                        checked={selectedUsers.includes(user._id)}
+                                        onCheckedChange={() => handleToggleUser(user._id)}
+                                    />
+                                    <label
+                                        htmlFor={`user-${user._id}`}
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                        {user.username}
+                                    </label>
+                                </div>
+                            ))
+                        )}
+                    </ScrollArea>
                 </div>
-
-                {/* Adicionar novos usuários */}
-                <div className="mt-2">
-                    <TaskSelect
-                        label="Selecionar usuários"
-                        value={selectedUsers}
-                        options={users.map((u) => ({
-                            label: u.username,
-                            value: u._id,
-                        }))}
-                        onChange={(v) =>
-                            onChange(Array.isArray(v) ? v : [v])
-                        }
-                        multiple
-                    />
-                </div>
-
-                <div className="flex justify-end gap-2 mt-6">
-                    <Button
-                        variant="outline"
-                        onClick={onClose}
-                        className="flex items-center"
-                    >
-                        <XCircle className="h-4 w-4 mr-1" /> Cancelar
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                        Cancelar
                     </Button>
-                    <Button
-                        onClick={onSave}
-                        className="bg-blue-600 hover:bg-blue-700 text-white flex items-center"
-                    >
-                        <Save className="h-4 w-4 mr-1" /> Salvar
-                    </Button>
+                    <Button className="text-white" onClick={handleSave}>Salvar</Button>
                 </div>
             </DialogContent>
         </Dialog>
     );
 };
+

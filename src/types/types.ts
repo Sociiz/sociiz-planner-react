@@ -4,6 +4,19 @@ export type Status = "backlog" | "todo" | "inprogress" | "done";
 
 export type EvaluationStatus = "pending" | "approved" | "rejected";
 
+export interface IClient {
+  _id: string;
+  name: string;
+}
+export interface IProject {
+  _id: string;
+  name: string;
+}
+export interface IProduct {
+  _id: string;
+  name: string;
+}
+
 export interface Subtask {
   _id?: string;
   title: string;
@@ -19,6 +32,8 @@ export interface Task {
   status: Status;
   evaluationStatus?: EvaluationStatus;
   client?: string[];
+  project?: string[];
+  product?: string[];
   createdBy: string;
   assignedTo: string[];
   tags?: string[];
