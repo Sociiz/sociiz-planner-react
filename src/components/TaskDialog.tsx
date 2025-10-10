@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Plus, X } from "lucide-react";
+import { Save, Plus, Check, X } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import { type Task, type Subtask, type Status, type EvaluationStatus, type IClient, type IProject, type IProduct } from "@/types/types";
 import { TaskFormField } from "./TaskDialog/TaskFormField";
@@ -76,44 +76,41 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             fetchAllData();
             initialDataLoaded.current = true;
         }
-        if (!open) {
-            initialDataLoaded.current = false;
-        }
+        if (!open) initialDataLoaded.current = false;
     }, [open]);
 
     useEffect(() => {
-        if (open) {
-            if (editingTask) {
-                setFormData({
-                    title: editingTask.title || "",
-                    description: editingTask.description || "",
-                    status: editingTask.status || "todo",
-                    evaluationStatus: editingTask.evaluationStatus || "pending",
-                    createdBy: editingTask.createdBy || user?.id || "",
-                    clientNames: editingTask.client || [],
-                    projectNames: editingTask.project || [],
-                    productNames: editingTask.product || [],
-                    assignedToInput: editingTask.assignedTo || [],
-                    tagsInput: editingTask.tags?.join(", ") || "",
-                    subtasksInputArray: editingTask.subtasks || [],
-                    dueDate: editingTask.dueDate || "",
-                });
-            } else {
-                setFormData({
-                    title: "",
-                    description: "",
-                    status: "todo",
-                    evaluationStatus: "pending",
-                    createdBy: user?.id || "",
-                    clientNames: [],
-                    projectNames: [],
-                    productNames: [],
-                    assignedToInput: [],
-                    tagsInput: "",
-                    subtasksInputArray: [],
-                    dueDate: "",
-                });
-            }
+        if (!open) return;
+        if (editingTask) {
+            setFormData({
+                title: editingTask.title || "",
+                description: editingTask.description || "",
+                status: editingTask.status || "todo",
+                evaluationStatus: editingTask.evaluationStatus || "pending",
+                createdBy: editingTask.createdBy || user?.id || "",
+                clientNames: editingTask.client || [],
+                projectNames: editingTask.project || [],
+                productNames: editingTask.product || [],
+                assignedToInput: editingTask.assignedTo || [],
+                tagsInput: editingTask.tags?.join(", ") || "",
+                subtasksInputArray: editingTask.subtasks || [],
+                dueDate: editingTask.dueDate || "",
+            });
+        } else {
+            setFormData({
+                title: "",
+                description: "",
+                status: "todo",
+                evaluationStatus: "pending",
+                createdBy: user?.id || "",
+                clientNames: [],
+                projectNames: [],
+                productNames: [],
+                assignedToInput: [],
+                tagsInput: "",
+                subtasksInputArray: [],
+                dueDate: "",
+            });
         }
     }, [editingTask, open, user?.id]);
 
@@ -139,47 +136,31 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleCreateClient = async () => {
-        if (!newClientName.trim()) return;
+    const handleCreateEntity = async (
+        type: "client" | "project" | "product",
+        name: string,
+        reset: () => void
+    ) => {
+        if (!name.trim()) return;
         setSavingNew(true);
         try {
-            const newClient = await ClientService.create({ name: newClientName.trim() });
-            setClients((prev) => [...prev, newClient]);
-            handleChange("clientNames", [...formData.clientNames, newClient.name]);
-            setNewClientName("");
-            setCreatingClient(false);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setSavingNew(false);
-        }
-    };
+            let newItem: IClient | IProject | IProduct;
 
-    const handleCreateProject = async () => {
-        if (!newProjectName.trim()) return;
-        setSavingNew(true);
-        try {
-            const newProject = await ProjectService.create({ name: newProjectName.trim() });
-            setProjects((prev) => [...prev, newProject]);
-            handleChange("projectNames", [...formData.projectNames, newProject.name]);
-            setNewProjectName("");
-            setCreatingProject(false);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setSavingNew(false);
-        }
-    };
+            if (type === "client") {
+                newItem = await ClientService.create({ name });
+                setClients((prev) => [...prev, newItem]);
+                handleChange("clientNames", [...formData.clientNames, newItem.name]);
+            } else if (type === "project") {
+                newItem = await ProjectService.create({ name });
+                setProjects((prev) => [...prev, newItem]);
+                handleChange("projectNames", [...formData.projectNames, newItem.name]);
+            } else if (type === "product") {
+                newItem = await ProductService.create({ name });
+                setProducts((prev) => [...prev, newItem]);
+                handleChange("productNames", [...formData.productNames, newItem.name]);
+            }
 
-    const handleCreateProduct = async () => {
-        if (!newProductName.trim()) return;
-        setSavingNew(true);
-        try {
-            const newProduct = await ProductService.create({ name: newProductName.trim() });
-            setProducts((prev) => [...prev, newProduct]);
-            handleChange("productNames", [...formData.productNames, newProduct.name]);
-            setNewProductName("");
-            setCreatingProduct(false);
+            reset();
         } catch (error) {
             console.error(error);
         } finally {
@@ -209,14 +190,76 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         onOpenChange(false);
     };
 
+    const renderEntityField = (
+        label: string,
+        value: string[],
+        options: { label: string; value: string }[],
+        creating: boolean,
+        setCreating: (v: boolean) => void,
+        newName: string,
+        setNewName: (v: string) => void,
+        type: "client" | "project" | "product"
+    ) => (
+        <div className="space-y-2">
+            {!creating ? (
+                <>
+                    <TaskSelect
+                        label={label}
+                        value={value}
+                        options={options}
+                        onChange={(v) => handleChange(`${type}Names` as any, v as string[])}
+                        multiple
+                    />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={() => setCreating(true)}
+                    >
+                        <Plus className="h-3 w-3" /> Novo {label}
+                    </Button>
+                </>
+            ) : (
+                <div className="flex gap-2">
+                    <Input
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        placeholder={`Novo ${label}`}
+                        autoFocus
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") handleCreateEntity(type, newName, () => { setCreating(false); setNewName(""); });
+                            if (e.key === "Escape") { setCreating(false); setNewName(""); }
+                        }}
+                    />
+                    <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => handleCreateEntity(type, newName, () => { setCreating(false); setNewName(""); })}
+                        disabled={!newName.trim() || savingNew}
+                    >
+                        <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => { setCreating(false); setNewName(""); }}
+                        disabled={savingNew}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold">
-                            {editingTask ? "Editar Tarefa" : "Nova Tarefa"}
-                        </DialogTitle>
+                        <DialogTitle className="text-xl font-semibold">{editingTask ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
                     </DialogHeader>
 
                     {loadingData ? (
@@ -242,7 +285,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                 />
                             </div>
 
-                            {/* Status e Data */}
+                            {/* Status, Avaliação e Data */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <TaskSelect
                                     label="Status"
@@ -273,118 +316,11 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                 />
                             </div>
 
-                            {/* Cliente/Projeto/Produto */}
+                            {/* Vínculos */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {/* Cliente */}
-                                <div className="space-y-2">
-                                    {!creatingClient ? (
-                                        <>
-                                            <TaskSelect
-                                                label="Cliente"
-                                                value={formData.clientNames}
-                                                options={clients.map((c) => ({ label: c.name, value: c.name }))}
-                                                onChange={(v) => handleChange("clientNames", v as string[])}
-                                                multiple
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="link"
-                                                size="sm"
-                                                onClick={() => setCreatingClient(true)}
-                                            >
-                                                + Novo Cliente
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <div className="flex gap-2">
-                                            <Input
-                                                value={newClientName}
-                                                onChange={(e) => setNewClientName(e.target.value)}
-                                                placeholder="Novo cliente"
-                                            />
-                                            <Button onClick={handleCreateClient} disabled={savingNew}>
-                                                Salvar
-                                            </Button>
-                                            <Button variant="ghost" onClick={() => setCreatingClient(false)}>
-                                                Cancelar
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Projeto */}
-                                <div className="space-y-2">
-                                    {!creatingProject ? (
-                                        <>
-                                            <TaskSelect
-                                                label="Projeto"
-                                                value={formData.projectNames}
-                                                options={projects.map((p) => ({ label: p.name, value: p.name }))}
-                                                onChange={(v) => handleChange("projectNames", v as string[])}
-                                                multiple
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="link"
-                                                size="sm"
-                                                onClick={() => setCreatingProject(true)}
-                                            >
-                                                + Novo Projeto
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <div className="flex gap-2">
-                                            <Input
-                                                value={newProjectName}
-                                                onChange={(e) => setNewProjectName(e.target.value)}
-                                                placeholder="Novo projeto"
-                                            />
-                                            <Button onClick={handleCreateProject} disabled={savingNew}>
-                                                Salvar
-                                            </Button>
-                                            <Button variant="ghost" onClick={() => setCreatingProject(false)}>
-                                                Cancelar
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Produto */}
-                                <div className="space-y-2">
-                                    {!creatingProduct ? (
-                                        <>
-                                            <TaskSelect
-                                                label="Produto"
-                                                value={formData.productNames}
-                                                options={products.map((p) => ({ label: p.name, value: p.name }))}
-                                                onChange={(v) => handleChange("productNames", v as string[])}
-                                                multiple
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="link"
-                                                size="sm"
-                                                onClick={() => setCreatingProduct(true)}
-                                            >
-                                                + Novo Produto
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <div className="flex gap-2">
-                                            <Input
-                                                value={newProductName}
-                                                onChange={(e) => setNewProductName(e.target.value)}
-                                                placeholder="Novo produto"
-                                            />
-                                            <Button onClick={handleCreateProduct} disabled={savingNew}>
-                                                Salvar
-                                            </Button>
-                                            <Button variant="ghost" onClick={() => setCreatingProduct(false)}>
-                                                Cancelar
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
+                                {renderEntityField("Cliente", formData.clientNames, clients.map(c => ({ label: c.name, value: c.name })), creatingClient, setCreatingClient, newClientName, setNewClientName, "client")}
+                                {renderEntityField("Projeto", formData.projectNames, projects.map(p => ({ label: p.name, value: p.name })), creatingProject, setCreatingProject, newProjectName, setNewProjectName, "project")}
+                                {renderEntityField("Produto", formData.productNames, products.map(p => ({ label: p.name, value: p.name })), creatingProduct, setCreatingProduct, newProductName, setNewProductName, "product")}
                             </div>
 
                             {/* Atribuir a */}
@@ -398,6 +334,14 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                 />
                             </div>
 
+                            {/* Tags */}
+                            <TaskFormField
+                                label="Tags"
+                                value={formData.tagsInput}
+                                onChange={(v) => handleChange("tagsInput", v)}
+                                placeholder="Separar tags por vírgula"
+                            />
+
                             {/* Subtasks */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Subtarefas</label>
@@ -408,15 +352,13 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                             index={index}
                                             subtask={subtask}
                                             users={users}
-                                            onUpdate={(i, updatedSubtask) => {
+                                            onUpdate={(i, updated) => {
                                                 const newSubtasks = [...formData.subtasksInputArray];
-                                                newSubtasks[i] = updatedSubtask;
+                                                newSubtasks[i] = updated;
                                                 handleChange("subtasksInputArray", newSubtasks);
                                             }}
                                             onDelete={(i) => {
-                                                const newSubtasks = formData.subtasksInputArray.filter(
-                                                    (_, idx) => idx !== i
-                                                );
+                                                const newSubtasks = formData.subtasksInputArray.filter((_, idx) => idx !== i);
                                                 handleChange("subtasksInputArray", newSubtasks);
                                             }}
                                             onAssignClick={(i) => setSubtaskAssignIndex(i)}
@@ -427,13 +369,13 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                     type="button"
                                     variant="outline"
                                     size="sm"
+                                    className="w-full"
                                     onClick={() =>
                                         handleChange("subtasksInputArray", [
                                             ...formData.subtasksInputArray,
                                             { title: "", done: false, assignedTo: [] },
                                         ])
                                     }
-                                    className="w-full"
                                 >
                                     <Plus className="h-4 w-4 mr-2" /> Adicionar Subtarefa
                                 </Button>
