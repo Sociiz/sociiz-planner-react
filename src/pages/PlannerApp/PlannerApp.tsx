@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/authContext";
 import { useNavigate } from "react-router-dom";
-import { TaskDialog } from "@/components/TaskDialog";
+import { TaskDialog } from "@/components/TaskDialog/TaskDialog";
 import { type Task, type Theme } from "@/types/types";
 import { useTheme } from "@/components/theme-provider";
 import { PlannerHeader } from "./PlannerHeader";
@@ -88,7 +88,7 @@ export default function PlannerApp() {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
             <PlannerHeader
                 theme={theme}
-                setTheme={handleThemeChange} 
+                setTheme={handleThemeChange}
                 onNewTask={() => openDialog(null)}
                 onLogout={handleLogout}
             />
