@@ -17,6 +17,11 @@ export interface IProduct {
   name: string;
 }
 
+export interface Itag {
+  _id: string;
+  name: string;
+}
+
 export interface Subtask {
   _id?: string;
   title: string;

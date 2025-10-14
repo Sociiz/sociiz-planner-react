@@ -2,9 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Plus, Check, X } from "lucide-react";
+import { Save, Plus, Check, X, Tag } from "lucide-react";
 import { useAuth } from "@/context/authContext";
-import { type Task, type Subtask, type Status, type EvaluationStatus, type IClient, type IProject, type IProduct } from "@/types/types";
+import { type Task, type Subtask, type Status, type EvaluationStatus, type IClient, type IProject, type IProduct, type Itag } from "@/types/types";
 import { TaskFormField } from "./TaskFormField";
 import { TaskSelect } from "./TaskSelect";
 import { SubtaskItem } from "./SubtaskItem";
@@ -12,13 +12,14 @@ import { AssignModal } from "./AssignModal";
 import { ClientService } from "@/services/clientService";
 import { ProjectService } from "@/services/projectService";
 import { ProductService } from "@/services/productService";
+import { tagService } from "@/services/tagService";
 
 type TaskFormData = Omit<Task, "_id" | "client" | "project" | "product" | "assignedTo" | "subtasks" | "tags"> & {
     clientNames: string[];
     projectNames: string[];
     productNames: string[];
+    tagNames: string[];
     assignedToInput: string[];
-    tagsInput: string;
     subtasksInputArray: Subtask[];
     dueDate?: string;
 };
@@ -50,13 +51,14 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         clientNames: [],
         projectNames: [],
         productNames: [],
+        tagNames: [],
         assignedToInput: [],
-        tagsInput: "",
         subtasksInputArray: [],
         dueDate: "",
     });
 
     const [clients, setClients] = useState<IClient[]>([]);
+    const [tags, setTags] = useState<Itag[]>([]);
     const [projects, setProjects] = useState<IProject[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
     const [loadingData, setLoadingData] = useState(false);
@@ -64,9 +66,11 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     const [creatingClient, setCreatingClient] = useState(false);
     const [creatingProject, setCreatingProject] = useState(false);
     const [creatingProduct, setCreatingProduct] = useState(false);
+    const [creatingTag, setCreatingTag] = useState(false);
     const [newClientName, setNewClientName] = useState("");
     const [newProjectName, setNewProjectName] = useState("");
     const [newProductName, setNewProductName] = useState("");
+    const [newTagName, setNewTagName] = useState("");
     const [savingNew, setSavingNew] = useState(false);
 
     const [subtaskAssignIndex, setSubtaskAssignIndex] = useState<number | null>(null);
@@ -91,8 +95,8 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 clientNames: editingTask.client || [],
                 projectNames: editingTask.project || [],
                 productNames: editingTask.product || [],
+                tagNames: editingTask.tags || [],
                 assignedToInput: editingTask.assignedTo || [],
-                tagsInput: editingTask.tags?.join(", ") || "",
                 subtasksInputArray: editingTask.subtasks || [],
                 dueDate: editingTask.dueDate || "",
             });
@@ -107,7 +111,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 projectNames: [],
                 productNames: [],
                 assignedToInput: [],
-                tagsInput: "",
+                tagNames: [],
                 subtasksInputArray: [],
                 dueDate: "",
             });
@@ -117,14 +121,16 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     const fetchAllData = async () => {
         setLoadingData(true);
         try {
-            const [clientsData, projectsData, productsData] = await Promise.all([
+            const [clientsData, projectsData, productsData, tagsData] = await Promise.all([
                 ClientService.getAll(),
                 ProjectService.getAll(),
                 ProductService.getAll(),
+                tagService.getAll(),
             ]);
             setClients(clientsData);
             setProjects(projectsData);
             setProducts(productsData);
+            setTags(tagsData);
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
         } finally {
@@ -137,14 +143,14 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     };
 
     const handleCreateEntity = async (
-        type: "client" | "project" | "product",
+        type: "client" | "project" | "product" | "tag",
         name: string,
         reset: () => void
     ) => {
         if (!name.trim()) return;
         setSavingNew(true);
         try {
-            let newItem: IClient | IProject | IProduct;
+            let newItem: IClient | IProject | IProduct | Itag;
 
             if (type === "client") {
                 newItem = await ClientService.create({ name });
@@ -158,6 +164,10 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 newItem = await ProductService.create({ name });
                 setProducts((prev) => [...prev, newItem]);
                 handleChange("productNames", [...formData.productNames, newItem.name]);
+            } else if (type === "tag") {
+                newItem = await tagService.create({ name });
+                setTags((prev) => [...prev, newItem]);
+                handleChange("tagNames", [...formData.tagNames, newItem.name]);
             }
 
             reset();
@@ -181,9 +191,9 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             client: formData.clientNames,
             project: formData.projectNames,
             product: formData.productNames,
+            tags: formData.tagNames,
             assignedTo: formData.assignedToInput,
             subtasks: formData.subtasksInputArray,
-            tags: formData.tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
             dueDate: formData.dueDate,
         });
 
@@ -198,7 +208,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         setCreating: (v: boolean) => void,
         newName: string,
         setNewName: (v: string) => void,
-        type: "client" | "project" | "product"
+        type: "client" | "project" | "product" | "tag"
     ) => (
         <div className="space-y-2">
             {!creating ? (
@@ -257,9 +267,11 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold">{editingTask ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
+                <DialogContent className="!max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
+                    <DialogHeader className="border-b pb-2">
+                        <DialogTitle className="text-xl font-semibold">
+                            {editingTask ? "Editar Tarefa" : "Nova Tarefa"}
+                        </DialogTitle>
                     </DialogHeader>
 
                     {loadingData ? (
@@ -267,9 +279,11 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                             <p className="text-gray-500">Carregando dados...</p>
                         </div>
                     ) : (
-                        <div className="space-y-6 mt-2">
+                        <div className="flex flex-col gap-8 mt-4">
+
                             {/* Informações básicas */}
-                            <div className="space-y-4">
+                            <section className="space-y-4">
+                                <h3 className="text-base font-medium text-white">Informações básicas</h3>
                                 <TaskFormField
                                     label="Título"
                                     value={formData.title}
@@ -283,48 +297,56 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                     placeholder="Adicione detalhes sobre a tarefa"
                                     textarea
                                 />
-                            </div>
+                            </section>
 
                             {/* Status, Avaliação e Data */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <TaskSelect
-                                    label="Status"
-                                    value={formData.status}
-                                    options={[
-                                        { label: "Backlog", value: "backlog" },
-                                        { label: "A Fazer", value: "todo" },
-                                        { label: "Em Progresso", value: "inprogress" },
-                                        { label: "Concluído", value: "done" },
-                                    ]}
-                                    onChange={(v) => handleChange("status", v as Status)}
-                                />
-                                <TaskSelect
-                                    label="Avaliação"
-                                    value={formData.evaluationStatus || "pending"}
-                                    options={[
-                                        { label: "Pendente", value: "pending" },
-                                        { label: "Aprovada", value: "approved" },
-                                        { label: "Rejeitada", value: "rejected" },
-                                    ]}
-                                    onChange={(v) => handleChange("evaluationStatus", v as EvaluationStatus)}
-                                />
-                                <TaskFormField
-                                    label="Data de Entrega"
-                                    type="date"
-                                    value={formData.dueDate || ""}
-                                    onChange={(v) => handleChange("dueDate", v)}
-                                />
-                            </div>
+                            <section>
+                                <h3 className="text-base font-medium text-white mb-3">Status e Prazo</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <TaskSelect
+                                        label="Status"
+                                        value={formData.status}
+                                        options={[
+                                            { label: "Backlog", value: "backlog" },
+                                            { label: "A Fazer", value: "todo" },
+                                            { label: "Em Progresso", value: "inprogress" },
+                                            { label: "Concluído", value: "done" },
+                                        ]}
+                                        onChange={(v) => handleChange("status", v as Status)}
+                                    />
+                                    <TaskSelect
+                                        label="Avaliação"
+                                        value={formData.evaluationStatus || "pending"}
+                                        options={[
+                                            { label: "Pendente", value: "pending" },
+                                            { label: "Aprovada", value: "approved" },
+                                            { label: "Rejeitada", value: "rejected" },
+                                        ]}
+                                        onChange={(v) => handleChange("evaluationStatus", v as EvaluationStatus)}
+                                    />
+                                    <TaskFormField
+                                        label="Data de Entrega"
+                                        type="date"
+                                        value={formData.dueDate || ""}
+                                        onChange={(v) => handleChange("dueDate", v)}
+                                    />
+                                </div>
+                            </section>
 
                             {/* Vínculos */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {renderEntityField("Cliente", formData.clientNames, clients.map(c => ({ label: c.name, value: c.name })), creatingClient, setCreatingClient, newClientName, setNewClientName, "client")}
-                                {renderEntityField("Projeto", formData.projectNames, projects.map(p => ({ label: p.name, value: p.name })), creatingProject, setCreatingProject, newProjectName, setNewProjectName, "project")}
-                                {renderEntityField("Produto", formData.productNames, products.map(p => ({ label: p.name, value: p.name })), creatingProduct, setCreatingProduct, newProductName, setNewProductName, "product")}
-                            </div>
+                            <section>
+                                <h3 className="text-base font-medium text-white mb-3">Vínculos e Categorias</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                                    {renderEntityField("Cliente", formData.clientNames, clients.map(c => ({ label: c.name, value: c.name })), creatingClient, setCreatingClient, newClientName, setNewClientName, "client")}
+                                    {renderEntityField("Projeto", formData.projectNames, projects.map(p => ({ label: p.name, value: p.name })), creatingProject, setCreatingProject, newProjectName, setNewProjectName, "project")}
+                                    {renderEntityField("Produto", formData.productNames, products.map(p => ({ label: p.name, value: p.name })), creatingProduct, setCreatingProduct, newProductName, setNewProductName, "product")}
+                                    {renderEntityField("Tag", formData.tagNames, tags.map(t => ({ label: t.name, value: t.name })), creatingTag, setCreatingTag, newTagName, setNewTagName, "tag")}
+                                </div>
+                            </section>
 
-                            {/* Atribuir a */}
-                            <div className="space-y-2">
+                            {/* Responsáveis */}
+                            <section>
+                                <h3 className="text-base font-medium text-white mb-3">Responsáveis</h3>
                                 <TaskSelect
                                     label="Atribuir a"
                                     value={formData.assignedToInput}
@@ -332,19 +354,11 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                     onChange={(v) => handleChange("assignedToInput", v as string[])}
                                     multiple
                                 />
-                            </div>
+                            </section>
 
-                            {/* Tags */}
-                            <TaskFormField
-                                label="Tags"
-                                value={formData.tagsInput}
-                                onChange={(v) => handleChange("tagsInput", v)}
-                                placeholder="Separar tags por vírgula"
-                            />
-
-                            {/* Subtasks */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Subtarefas</label>
+                            {/* Subtarefas */}
+                            <section>
+                                <h3 className="text-base font-medium text-white mb-3">Subtarefas</h3>
                                 <div className="space-y-2">
                                     {formData.subtasksInputArray.map((subtask, index) => (
                                         <SubtaskItem
@@ -364,31 +378,34 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                             onAssignClick={(i) => setSubtaskAssignIndex(i)}
                                         />
                                     ))}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full mt-2"
+                                        onClick={() =>
+                                            handleChange("subtasksInputArray", [
+                                                ...formData.subtasksInputArray,
+                                                { title: "", done: false, assignedTo: [] },
+                                            ])
+                                        }
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" /> Adicionar Subtarefa
+                                    </Button>
                                 </div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={() =>
-                                        handleChange("subtasksInputArray", [
-                                            ...formData.subtasksInputArray,
-                                            { title: "", done: false, assignedTo: [] },
-                                        ])
-                                    }
-                                >
-                                    <Plus className="h-4 w-4 mr-2" /> Adicionar Subtarefa
-                                </Button>
-                            </div>
+                            </section>
 
-                            <div className="flex justify-end gap-2">
-                                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                            {/* Ações */}
+                            <section className="border-t pt-4 flex justify-end gap-2">
+                                <Button variant="ghost" onClick={() => onOpenChange(false)}>
                                     Cancelar
                                 </Button>
-                                <Button className="text-white" type="submit" onClick={handleSubmit}>
-                                    <Save className="h-4 w-4 mr-1 text-white" /> {editingTask ? "Salvar Alterações" : "Criar Tarefa"}
+                                <Button className="text-white" onClick={handleSubmit}>
+                                    <Save className="h-4 w-4 mr-1 text-white" />
+                                    {editingTask ? "Salvar Alterações" : "Criar Tarefa"}
                                 </Button>
-                            </div>
+                            </section>
+
                         </div>
                     )}
                 </DialogContent>

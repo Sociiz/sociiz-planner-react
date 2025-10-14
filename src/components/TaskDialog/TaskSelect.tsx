@@ -43,7 +43,7 @@ export const TaskSelect: React.FC<TaskSelectProps> = ({
             return (
                 <div className="flex flex-wrap gap-1">
                     {value.map((v, idx) => (
-                        <Badge key={`${v}-${idx}`} variant="secondary">
+                        <Badge key={`${v}-${idx}`} className="bg-blue-600 text-white">
                             {options.find((o) => o.value === v)?.label || v}
                         </Badge>
                     ))}
