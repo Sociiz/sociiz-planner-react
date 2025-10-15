@@ -2,9 +2,9 @@ import React, { useEffect, useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Plus, Check, X, Tag } from "lucide-react";
+import { Save, Plus, Check, X } from "lucide-react";
 import { useAuth } from "@/context/authContext";
-import { type Task, type Subtask, type Status, type EvaluationStatus, type IClient, type IProject, type IProduct, type Itag } from "@/types/types";
+import { type Task, type Subtask, type Status, type EvaluationStatus, type IClient, type IProject, type IProduct, type Itag, type Priority } from "@/types/types";
 import { TaskFormField } from "./TaskFormField";
 import { TaskSelect } from "./TaskSelect";
 import { SubtaskItem } from "./SubtaskItem";
@@ -55,6 +55,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         assignedToInput: [],
         subtasksInputArray: [],
         dueDate: "",
+        priority: "Média",
     });
 
     const [clients, setClients] = useState<IClient[]>([]);
@@ -91,6 +92,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 description: editingTask.description || "",
                 status: editingTask.status || "todo",
                 evaluationStatus: editingTask.evaluationStatus || "pending",
+                priority: editingTask.priority || "Média",
                 createdBy: editingTask.createdBy || user?.id || "",
                 clientNames: editingTask.client || [],
                 projectNames: editingTask.project || [],
@@ -106,6 +108,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 description: "",
                 status: "todo",
                 evaluationStatus: "pending",
+                priority: "Média",
                 createdBy: user?.id || "",
                 clientNames: [],
                 projectNames: [],
@@ -187,6 +190,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             description: formData.description?.trim() || "",
             status: formData.status,
             evaluationStatus: formData.evaluationStatus,
+            priority: formData.priority,
             createdBy: formData.createdBy,
             client: formData.clientNames,
             project: formData.projectNames,
@@ -302,7 +306,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                             {/* Status, Avaliação e Data */}
                             <section>
                                 <h3 className="text-base font-medium text-white mb-3">Status e Prazo</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <TaskSelect
                                         label="Status"
                                         value={formData.status}
@@ -323,6 +327,17 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                             { label: "Rejeitada", value: "rejected" },
                                         ]}
                                         onChange={(v) => handleChange("evaluationStatus", v as EvaluationStatus)}
+                                    />
+                                    <TaskSelect
+                                        label="Prioridade"
+                                        value={formData.priority || "Média"}
+                                        options={[
+                                            { label: "Baixa", value: "Baixa" },
+                                            { label: "Média", value: "Média" },
+                                            { label: "Alta", value: "Alta" },
+                                            { label: "Urgente", value: "Urgente" },
+                                        ]}
+                                        onChange={(v) => handleChange("priority", v as Priority)}
                                     />
                                     <TaskFormField
                                         label="Data de Entrega"

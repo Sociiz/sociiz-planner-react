@@ -4,6 +4,8 @@ export type Status = "backlog" | "todo" | "inprogress" | "done";
 
 export type EvaluationStatus = "pending" | "approved" | "rejected";
 
+export type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
+
 export interface IClient {
   _id: string;
   name: string;
@@ -36,6 +38,7 @@ export interface Task {
   description?: string;
   status: Status;
   evaluationStatus?: EvaluationStatus;
+  priority?: Priority;
   client?: string[];
   project?: string[];
   product?: string[];
