@@ -32,6 +32,21 @@ export interface Subtask {
   done: boolean;
 }
 
+export type Filters = {
+  clients: string[];
+  projects: string[];
+  products: string[];
+  assignedTo: string[];
+  tags: string[];
+  priorities: string[];
+  dueDate?: string;
+};
+
+export type FilterOption = {
+  id: string;
+  label: string;
+};
+
 export interface Task {
   _id: string;
   title: string;

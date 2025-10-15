@@ -86,8 +86,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, dr
                 </div>
 
                 {task.dueDate && (
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" /> {new Date(task.dueDate).toLocaleDateString()}
+                    <div className="text-slate-500 dark:text-slate-400 mt-1 flex justify-between gap-1">
+                        <div className='flex items-center font-medium gap-1'>
+                            <Calendar className=" w-3 h-3" /> {new Date(task.dueDate).toLocaleDateString()}
+                        </div>
+                        {task.priority && (
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${task.priority === 'Urgente' ? 'bg-red-500 text-white' :
+                                task.priority === 'Alta' ? 'bg-orange-500 text-white' :
+                                    task.priority === 'Média' ? 'bg-yellow-500 text-black' :
+                                        'bg-gray-500 text-white'
+                                }`}>
+                                {task.priority}
+                            </span>
+                        )}
                     </div>
                 )}
 
@@ -104,15 +115,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, dr
                     {task.subtasks && task.subtasks.length > 0 && (
                         <span className="px-2 py-1 rounded text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                             {task.subtasks?.filter(st => st.done).length}/{task.subtasks?.length}
-                        </span>
-                    )}
-                    {task.priority && (
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${task.priority === 'Urgente' ? 'bg-red-500 text-white' :
-                            task.priority === 'Alta' ? 'bg-orange-500 text-white' :
-                                task.priority === 'Média' ? 'bg-yellow-500 text-black' :
-                                    'bg-gray-500 text-white'
-                            }`}>
-                            {task.priority}
                         </span>
                     )}
                 </div>
