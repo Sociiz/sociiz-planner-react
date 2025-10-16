@@ -161,37 +161,41 @@ export default function PlannerApp() {
     const assignedToOptions: FilterOption[] = users.map((u) => ({ id: u._id, label: u.username }));
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
-            <PlannerHeader
-                theme={theme}
-                setTheme={handleThemeChange}
-                onNewTask={() => openDialog(null)}
-                onLogout={handleLogout}
-                filters={filters}
-                setFilters={setFilters}
-                clientsOptions={getUniqueValues(tasks, "client")}
-                projectsOptions={getUniqueValues(tasks, "project")}
-                productsOptions={getUniqueValues(tasks, "product")}
-                assignedToOptions={assignedToOptions}
-                tagsOptions={getUniqueValues(tasks, "tags")}
-                prioritiesOptions={["Baixa", "Média", "Alta", "Urgente"]}
-            />
+        <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
+            <div className="flex-1 flex flex-col">
+                <PlannerHeader
+                    theme={theme}
+                    setTheme={handleThemeChange}
+                    onNewTask={() => openDialog(null)}
+                    onLogout={handleLogout}
+                    filters={filters}
+                    setFilters={setFilters}
+                    clientsOptions={getUniqueValues(tasks, "client")}
+                    projectsOptions={getUniqueValues(tasks, "project")}
+                    productsOptions={getUniqueValues(tasks, "product")}
+                    assignedToOptions={assignedToOptions}
+                    tagsOptions={getUniqueValues(tasks, "tags")}
+                    prioritiesOptions={["Baixa", "Média", "Alta", "Urgente"]}
+                />
 
-            <PlannerKanban
-                tasks={filteredTasks}
-                setTasks={setTasks}
-                openDialog={openDialog}
-                activeId={activeId}
-                setActiveId={setActiveId}
-            />
+                <main className="flex-1 overflow-y-auto p-4">
+                    <PlannerKanban
+                        tasks={filteredTasks}
+                        setTasks={setTasks}
+                        openDialog={openDialog}
+                        activeId={activeId}
+                        setActiveId={setActiveId}
+                    />
+                </main>
 
-            <TaskDialog
-                open={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                onSubmit={handleSubmit}
-                editingTask={editingTask}
-                users={users}
-            />
+                <TaskDialog
+                    open={isDialogOpen}
+                    onOpenChange={setIsDialogOpen}
+                    onSubmit={handleSubmit}
+                    editingTask={editingTask}
+                    users={users}
+                />
+            </div>
         </div>
     );
 }

@@ -6,6 +6,7 @@ import { PrivateRoute } from "@/PrivateRoute"
 import Login from "@/pages/Login/Login"
 import RegisterPage from "@/pages/Register/Register"
 import PlannerApp from "./pages/PlannerApp/PlannerApp"
+import { AppLayout } from "./components/AppLayout"
 
 function App() {
   return (
@@ -13,16 +14,18 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Rota pública */}
+            {/* Rotas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<RegisterPage />} />
 
-            {/* Rota privada */}
+            {/* Rotas privadas */}
             <Route
               path="/planner"
               element={
                 <PrivateRoute>
-                  <PlannerApp />
+                  <AppLayout>
+                    <PlannerApp />
+                  </AppLayout>
                 </PrivateRoute>
               }
             />
