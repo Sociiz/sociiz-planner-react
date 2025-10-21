@@ -8,7 +8,7 @@ interface TaskCardProps {
     task: Task;
     users: User[];
     onMoreClick?: (task: Task) => void;
-    onRequestDelete?: (task: Task) => void; // <-- renomeado para indicar modal
+    onRequestDelete?: (task: Task) => void;
     dragHandleProps?: React.SVGProps<SVGSVGElement>;
 }
 
