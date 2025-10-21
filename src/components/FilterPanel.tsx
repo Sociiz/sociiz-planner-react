@@ -9,7 +9,7 @@ interface FilterPanelProps {
     clientsOptions: string[];
     projectsOptions: string[];
     productsOptions: string[];
-    colaboradoresOptions: FilterOption[];
+    assignedToOptions: FilterOption[];
     tagsOptions: string[];
     prioritiesOptions: string[];
 }
@@ -20,11 +20,10 @@ export function FilterPanel({
     clientsOptions,
     projectsOptions,
     productsOptions,
-    colaboradoresOptions = [],
+    assignedToOptions = [],
     tagsOptions,
     prioritiesOptions,
 }: FilterPanelProps) {
-
     const handleMultiSelectChange = (key: keyof Filters, values: string[]) => {
         setFilters({ ...filters, [key]: values });
     };
@@ -120,7 +119,7 @@ export function FilterPanel({
                 )}
             </div>
 
-            {/* Atribuído a (Colaboradores) */}
+            {/* Atribuído a */}
             <div className="relative">
                 <Select
                     value={filters.assignedTo[0] || ""}
@@ -130,7 +129,7 @@ export function FilterPanel({
                         <SelectValue placeholder="Atribuído a" />
                     </SelectTrigger>
                     <SelectContent>
-                        {colaboradoresOptions && colaboradoresOptions.length > 0 && colaboradoresOptions.map((c) => (
+                        {assignedToOptions.map((c) => (
                             <SelectItem key={c.id} value={c.id}>
                                 {c.label}
                             </SelectItem>

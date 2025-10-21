@@ -8,9 +8,10 @@ import { ClientModal } from "./Modal/ClienteModal";
 import { ProjectModal } from "./Modal/ProjectModal";
 import { ProductModal } from "./Modal/ProductModal";
 import { ColaboradorModal } from "./Modal/ColaboradorModal";
+import { TagsModal } from "./Modal/TagsModal";
 
 export function Sidebar() {
-    const [openModal, setOpenModal] = useState<"client" | "project" | "product" | "colaborador" | null>(null);
+    const [openModal, setOpenModal] = useState<"client" | "project" | "product" | "colaborador" | "tags" | null>(null);
     const [isOpen, setIsOpen] = useState(true); // controla sidebar desktop
 
     const toggleSidebar = () => setIsOpen((prev) => !prev);
@@ -55,12 +56,13 @@ export function Sidebar() {
             <ProjectModal open={openModal === "project"} onClose={() => setOpenModal(null)} />
             <ProductModal open={openModal === "product"} onClose={() => setOpenModal(null)} />
             <ColaboradorModal open={openModal === "colaborador"} onClose={() => setOpenModal(null)} />
+            <TagsModal open={openModal === "tags"} onClose={() => setOpenModal(null)} />
         </>
     );
 }
 
 interface SidebarContentProps {
-    setOpenModal: (v: "client" | "project" | "product" | "colaborador" | null) => void;
+    setOpenModal: (v: "client" | "project" | "product" | "colaborador" | "tags" | null) => void;
     isCollapsed?: boolean;
     onClose?: () => void;
 }
@@ -94,6 +96,11 @@ function SidebarContent({ setOpenModal, isCollapsed }: SidebarContentProps) {
                 <SidebarItem
                     label="Produtos"
                     onClick={() => setOpenModal("product")}
+                    isCollapsed={isCollapsed}
+                />
+                <SidebarItem
+                    label="Tags"
+                    onClick={() => setOpenModal("tags")}
                     isCollapsed={isCollapsed}
                 />
             </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
     DndContext,
     DragOverlay,
@@ -14,7 +14,7 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { COLUMNS } from "@/constants/constants";
 import { Column } from "@/components/Column";
 import { SortableTaskCard } from "@/components/SortableTaskCard";
-import { type Task, type Status, type User } from "@/types/types";
+import { type Task, type Status, type Colaborador } from "@/types/types";
 import api from "@/services/api";
 
 interface PlannerKanbanProps {
@@ -23,7 +23,8 @@ interface PlannerKanbanProps {
     openDialog: (task?: Task | null) => void;
     activeId: string | null;
     setActiveId: (id: string | null) => void;
-    onRequestDelete?: (task: Task) => void; // <-- função de solicitação de exclusão via modal
+    colaboradores: Colaborador[];
+    onRequestDelete?: (task: Task) => void;
 }
 
 export function PlannerKanban({
@@ -32,10 +33,9 @@ export function PlannerKanban({
     openDialog,
     activeId,
     setActiveId,
+    colaboradores,
     onRequestDelete,
 }: PlannerKanbanProps) {
-    const [users, setUsers] = useState<User[]>([]);
-
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -43,22 +43,6 @@ export function PlannerKanban({
 
     const getTasksByStatus = (status: Status) =>
         tasks.filter((t) => t.status === status);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [tasksRes, usersRes] = await Promise.all([
-                    api.get<Task[]>("/tasks"),
-                    api.get<User[]>("/users"),
-                ]);
-                setTasks(tasksRes.data);
-                setUsers(usersRes.data);
-            } catch (err) {
-                console.error("Erro ao buscar dados:", err);
-            }
-        };
-        fetchData();
-    }, [setTasks]);
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
@@ -113,7 +97,7 @@ export function PlannerKanban({
                             color={column.color}
                             tasks={getTasksByStatus(column.id)}
                             onTaskClick={openDialog}
-                            users={users}
+                            colaboradores={colaboradores}
                             onRequestDelete={onRequestDelete}
                         />
                     ))}
@@ -123,7 +107,7 @@ export function PlannerKanban({
                     {activeTask ? (
                         <SortableTaskCard
                             task={activeTask}
-                            users={users}
+                            colaboradores={colaboradores}
                             onRequestDelete={onRequestDelete}
                         />
                     ) : null}

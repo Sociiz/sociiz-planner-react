@@ -36,7 +36,7 @@ export default function PlannerApp() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [activeId, setActiveId] = useState<string | null>(null);
-    const [users, setUsers] = useState<{ _id: string; username: string }[]>([]);
+    const [colaboradores, setColaboradores] = useState<{ _id: string; name: string }[]>([]);
 
     const [confirmDeleteTask, setConfirmDeleteTask] = useState<Task | null>(null);
 
@@ -78,17 +78,17 @@ export default function PlannerApp() {
     const handleCancelDelete = () => setConfirmDeleteTask(null);
 
     useEffect(() => {
-        const fetchUsers = async () => {
+        const fetchColaboradores = async () => {
             try {
-                const response = await api.get("/users");
-                setUsers(response.data);
+                const response = await api.get("/colaboradores");
+                setColaboradores(response.data);
             } catch (err) {
-                console.error("Erro ao buscar usuários:", err);
+                console.error("Erro ao buscar colaboradores:", err);
             }
         };
 
         refreshTasks();
-        fetchUsers();
+        fetchColaboradores();
     }, []);
 
     // Filtra tasks
@@ -181,7 +181,7 @@ export default function PlannerApp() {
         return Array.from(new Set(values));
     };
 
-    const assignedToOptions: FilterOption[] = users.map((u) => ({ id: u._id, label: u.username }));
+    const assignedToOptions: FilterOption[] = colaboradores.map((u) => ({ id: u._id, label: u.name }));
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
@@ -208,7 +208,8 @@ export default function PlannerApp() {
                         openDialog={openDialog}
                         activeId={activeId}
                         setActiveId={setActiveId}
-                        onRequestDelete={handleRequestDelete} // abre modal de confirmação
+                        colaboradores={colaboradores}
+                        onRequestDelete={handleRequestDelete}
                     />
                 </main>
 
@@ -217,7 +218,7 @@ export default function PlannerApp() {
                     onOpenChange={setIsDialogOpen}
                     onSubmit={handleSubmit}
                     editingTask={editingTask}
-                    users={users}
+                    colaboradores={colaboradores}
                 />
 
                 {/* Modal de confirmação de exclusão */}

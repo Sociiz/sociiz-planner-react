@@ -4,7 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Save, Plus, Check, X } from "lucide-react";
 import { useAuth } from "@/context/authContext";
-import { type Task, type Subtask, type Status, type EvaluationStatus, type IClient, type IProject, type IProduct, type Itag, type Priority } from "@/types/types";
+import {
+    type Task,
+    type Subtask,
+    type Status,
+    type EvaluationStatus,
+    type IClient,
+    type IProject,
+    type IProduct,
+    type Itag,
+    type Priority,
+    type IColaborador,
+} from "@/types/types";
 import { TaskFormField } from "./TaskFormField";
 import { TaskSelect } from "./TaskSelect";
 import { SubtaskItem } from "./SubtaskItem";
@@ -13,8 +24,14 @@ import { ClientService } from "@/services/clientService";
 import { ProjectService } from "@/services/projectService";
 import { ProductService } from "@/services/productService";
 import { tagService } from "@/services/tagService";
+import { ColaboradorService } from "@/services/colaboradorService";
 
-type TaskFormData = Omit<Task, "_id" | "client" | "project" | "product" | "assignedTo" | "subtasks" | "tags"> & {
+type TaskFormData = {
+    title: string;
+    description?: string;
+    status: Status;
+    evaluationStatus: EvaluationStatus;
+    createdBy: string;
     clientNames: string[];
     projectNames: string[];
     productNames: string[];
@@ -22,6 +39,7 @@ type TaskFormData = Omit<Task, "_id" | "client" | "project" | "product" | "assig
     assignedToInput: string[];
     subtasksInputArray: Subtask[];
     dueDate?: string;
+    priority: Priority;
 };
 
 interface TaskDialogProps {
@@ -29,7 +47,7 @@ interface TaskDialogProps {
     onOpenChange: (open: boolean) => void;
     onSubmit: (task: Task) => void;
     editingTask?: Task | null;
-    users: { _id: string; username: string }[];
+    colaboradores: IColaborador[];
 }
 
 export const TaskDialog: React.FC<TaskDialogProps> = ({
@@ -37,7 +55,6 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     onOpenChange,
     onSubmit,
     editingTask,
-    users = [],
 }) => {
     const { user } = useAuth();
     const initialDataLoaded = useRef(false);
@@ -59,9 +76,10 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     });
 
     const [clients, setClients] = useState<IClient[]>([]);
-    const [tags, setTags] = useState<Itag[]>([]);
     const [projects, setProjects] = useState<IProject[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
+    const [tags, setTags] = useState<Itag[]>([]);
+    const [colaborador, setColaborador] = useState<IColaborador[]>([]);
     const [loadingData, setLoadingData] = useState(false);
 
     const [creatingClient, setCreatingClient] = useState(false);
@@ -86,19 +104,28 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
 
     useEffect(() => {
         if (!open) return;
+
         if (editingTask) {
             setFormData({
                 title: editingTask.title || "",
                 description: editingTask.description || "",
                 status: editingTask.status || "todo",
                 evaluationStatus: editingTask.evaluationStatus || "pending",
-                priority: editingTask.priority || "Média",
                 createdBy: editingTask.createdBy || user?.id || "",
-                clientNames: editingTask.client || [],
-                projectNames: editingTask.project || [],
-                productNames: editingTask.product || [],
-                tagNames: editingTask.tags || [],
-                assignedToInput: editingTask.assignedTo || [],
+                priority: editingTask.priority || "Média",
+                clientNames: Array.isArray(editingTask.client)
+                    ? editingTask.client.map((c: any) => (typeof c === "string" ? c : c.name))
+                    : [],
+                projectNames: Array.isArray(editingTask.project)
+                    ? editingTask.project.map((p: any) => (typeof p === "string" ? p : p.name))
+                    : [],
+                productNames: Array.isArray(editingTask.product)
+                    ? editingTask.product.map((p: any) => (typeof p === "string" ? p : p.name))
+                    : [],
+                tagNames: Array.isArray(editingTask.tags)
+                    ? editingTask.tags.map((t: any) => (typeof t === "string" ? t : t.name))
+                    : [],
+                assignedToInput: (editingTask.assignedTo as string[]) || [],
                 subtasksInputArray: editingTask.subtasks || [],
                 dueDate: editingTask.dueDate || "",
             });
@@ -108,13 +135,13 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 description: "",
                 status: "todo",
                 evaluationStatus: "pending",
-                priority: "Média",
                 createdBy: user?.id || "",
+                priority: "Média",
                 clientNames: [],
                 projectNames: [],
                 productNames: [],
-                assignedToInput: [],
                 tagNames: [],
+                assignedToInput: [],
                 subtasksInputArray: [],
                 dueDate: "",
             });
@@ -124,16 +151,20 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     const fetchAllData = async () => {
         setLoadingData(true);
         try {
-            const [clientsData, projectsData, productsData, tagsData] = await Promise.all([
-                ClientService.getAll(),
-                ProjectService.getAll(),
-                ProductService.getAll(),
-                tagService.getAll(),
-            ]);
+            const [clientsData, projectsData, productsData, tagsData, colaboradorData] =
+                await Promise.all([
+                    ClientService.getAll(),
+                    ProjectService.getAll(),
+                    ProductService.getAll(),
+                    tagService.getAll(),
+                    ColaboradorService.getAll(),
+                ]);
+
             setClients(clientsData);
             setProjects(projectsData);
             setProducts(productsData);
             setTags(tagsData);
+            setColaborador(colaboradorData);
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
         } finally {
@@ -153,7 +184,11 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         if (!name.trim()) return;
         setSavingNew(true);
         try {
-            let newItem: IClient | IProject | IProduct | Itag;
+            let newItem:
+                | IClient
+                | IProject
+                | IProduct
+                | Itag;
 
             if (type === "client") {
                 newItem = await ClientService.create({ name });
@@ -175,7 +210,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
 
             reset();
         } catch (error) {
-            console.error(error);
+            console.error("Erro ao criar item:", error);
         } finally {
             setSavingNew(false);
         }
@@ -184,7 +219,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     const handleSubmit = () => {
         if (!formData.title.trim()) return;
 
-        onSubmit({
+        const newTask: Task = {
             _id: editingTask?._id || "",
             title: formData.title.trim(),
             description: formData.description?.trim() || "",
@@ -199,10 +234,17 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             assignedTo: formData.assignedToInput,
             subtasks: formData.subtasksInputArray,
             dueDate: formData.dueDate,
-        });
+            colaborador: []
+        };
 
+        onSubmit(newTask);
         onOpenChange(false);
     };
+
+    const colaboradoresAsUsers = colaborador.map((c) => ({
+        _id: c._id || "",
+        username: c.name || "",
+    }));
 
     const renderEntityField = (
         label: string,
@@ -242,14 +284,26 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                         placeholder={`Novo ${label}`}
                         autoFocus
                         onKeyDown={(e) => {
-                            if (e.key === "Enter") handleCreateEntity(type, newName, () => { setCreating(false); setNewName(""); });
-                            if (e.key === "Escape") { setCreating(false); setNewName(""); }
+                            if (e.key === "Enter")
+                                handleCreateEntity(type, newName, () => {
+                                    setCreating(false);
+                                    setNewName("");
+                                });
+                            if (e.key === "Escape") {
+                                setCreating(false);
+                                setNewName("");
+                            }
                         }}
                     />
                     <Button
                         size="sm"
                         className="bg-green-600 hover:bg-green-700 text-white"
-                        onClick={() => handleCreateEntity(type, newName, () => { setCreating(false); setNewName(""); })}
+                        onClick={() =>
+                            handleCreateEntity(type, newName, () => {
+                                setCreating(false);
+                                setNewName("");
+                            })
+                        }
                         disabled={!newName.trim() || savingNew}
                     >
                         <Check className="h-4 w-4" />
@@ -258,7 +312,10 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                         size="sm"
                         variant="ghost"
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => { setCreating(false); setNewName(""); }}
+                        onClick={() => {
+                            setCreating(false);
+                            setNewName("");
+                        }}
                         disabled={savingNew}
                     >
                         <X className="h-4 w-4" />
@@ -284,7 +341,6 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                         </div>
                     ) : (
                         <div className="flex flex-col gap-8 mt-4">
-
                             {/* Informações básicas */}
                             <section className="space-y-4">
                                 <h3 className="text-base font-medium text-white">Informações básicas</h3>
@@ -303,7 +359,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                 />
                             </section>
 
-                            {/* Status, Avaliação e Data */}
+                            {/* Status e Prazo */}
                             <section>
                                 <h3 className="text-base font-medium text-white mb-3">Status e Prazo</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -320,7 +376,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                     />
                                     <TaskSelect
                                         label="Avaliação"
-                                        value={formData.evaluationStatus || "pending"}
+                                        value={formData.evaluationStatus}
                                         options={[
                                             { label: "Pendente", value: "pending" },
                                             { label: "Aprovada", value: "approved" },
@@ -330,7 +386,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                     />
                                     <TaskSelect
                                         label="Prioridade"
-                                        value={formData.priority || "Média"}
+                                        value={formData.priority}
                                         options={[
                                             { label: "Baixa", value: "Baixa" },
                                             { label: "Média", value: "Média" },
@@ -352,20 +408,59 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                             <section>
                                 <h3 className="text-base font-medium text-white mb-3">Vínculos e Categorias</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-                                    {renderEntityField("Cliente", formData.clientNames, clients.map(c => ({ label: c.name, value: c.name })), creatingClient, setCreatingClient, newClientName, setNewClientName, "client")}
-                                    {renderEntityField("Projeto", formData.projectNames, projects.map(p => ({ label: p.name, value: p.name })), creatingProject, setCreatingProject, newProjectName, setNewProjectName, "project")}
-                                    {renderEntityField("Produto", formData.productNames, products.map(p => ({ label: p.name, value: p.name })), creatingProduct, setCreatingProduct, newProductName, setNewProductName, "product")}
-                                    {renderEntityField("Tag", formData.tagNames, tags.map(t => ({ label: t.name, value: t.name })), creatingTag, setCreatingTag, newTagName, setNewTagName, "tag")}
+                                    {renderEntityField(
+                                        "Cliente",
+                                        formData.clientNames,
+                                        clients.map((c) => ({ label: c.name, value: c.name })),
+                                        creatingClient,
+                                        setCreatingClient,
+                                        newClientName,
+                                        setNewClientName,
+                                        "client"
+                                    )}
+                                    {renderEntityField(
+                                        "Projeto",
+                                        formData.projectNames,
+                                        projects.map((p) => ({ label: p.name, value: p.name })),
+                                        creatingProject,
+                                        setCreatingProject,
+                                        newProjectName,
+                                        setNewProjectName,
+                                        "project"
+                                    )}
+                                    {renderEntityField(
+                                        "Produto",
+                                        formData.productNames,
+                                        products.map((p) => ({ label: p.name, value: p.name })),
+                                        creatingProduct,
+                                        setCreatingProduct,
+                                        newProductName,
+                                        setNewProductName,
+                                        "product"
+                                    )}
+                                    {renderEntityField(
+                                        "Tag",
+                                        formData.tagNames,
+                                        tags.map((t) => ({ label: t.name, value: t.name })),
+                                        creatingTag,
+                                        setCreatingTag,
+                                        newTagName,
+                                        setNewTagName,
+                                        "tag"
+                                    )}
                                 </div>
                             </section>
 
-                            {/* Responsáveis */}
+                            {/* Responsáveis  */}
                             <section>
                                 <h3 className="text-base font-medium text-white mb-3">Responsáveis</h3>
                                 <TaskSelect
                                     label="Atribuir a"
                                     value={formData.assignedToInput}
-                                    options={users.map((u) => ({ label: u.username, value: u._id }))}
+                                    options={colaborador.map((c) => ({
+                                        label: c.name,
+                                        value: c._id || "",
+                                    }))}
                                     onChange={(v) => handleChange("assignedToInput", v as string[])}
                                     multiple
                                 />
@@ -380,14 +475,16 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                             key={index}
                                             index={index}
                                             subtask={subtask}
-                                            users={users}
+                                            users={colaboradoresAsUsers}
                                             onUpdate={(i, updated) => {
                                                 const newSubtasks = [...formData.subtasksInputArray];
                                                 newSubtasks[i] = updated;
                                                 handleChange("subtasksInputArray", newSubtasks);
                                             }}
                                             onDelete={(i) => {
-                                                const newSubtasks = formData.subtasksInputArray.filter((_, idx) => idx !== i);
+                                                const newSubtasks = formData.subtasksInputArray.filter(
+                                                    (_, idx) => idx !== i
+                                                );
                                                 handleChange("subtasksInputArray", newSubtasks);
                                             }}
                                             onAssignClick={(i) => setSubtaskAssignIndex(i)}
@@ -420,7 +517,6 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                     {editingTask ? "Salvar Alterações" : "Criar Tarefa"}
                                 </Button>
                             </section>
-
                         </div>
                     )}
                 </DialogContent>
@@ -430,8 +526,10 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 <AssignModal
                     open={subtaskAssignIndex !== null}
                     onOpenChange={() => setSubtaskAssignIndex(null)}
-                    users={users}
-                    assignedUsers={formData.subtasksInputArray[subtaskAssignIndex]?.assignedTo || []}
+                    users={colaboradoresAsUsers}
+                    assignedUsers={
+                        formData.subtasksInputArray[subtaskAssignIndex]?.assignedTo || []
+                    }
                     onAssign={(assigned) => {
                         const newSubtasks = [...formData.subtasksInputArray];
                         if (newSubtasks[subtaskAssignIndex]) {

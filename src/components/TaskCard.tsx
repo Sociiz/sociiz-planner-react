@@ -1,19 +1,38 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tag, User as UserIcon, MoreVertical, GripVertical, Calendar, Briefcase, Package, Users, Trash2 } from 'lucide-react';
-import { type Task, type User } from '../types/types';
+import {
+    Tag,
+    User as UserIcon,
+    MoreVertical,
+    GripVertical,
+    Calendar,
+    Briefcase,
+    Package,
+    Users,
+    Trash2,
+} from 'lucide-react';
+import { type Task, type IColaborador } from '../types/types';
 
 interface TaskCardProps {
     task: Task;
-    users: User[];
+    colaboradores: IColaborador[];
     onMoreClick?: (task: Task) => void;
     onRequestDelete?: (task: Task) => void;
     dragHandleProps?: React.SVGProps<SVGSVGElement>;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, onRequestDelete, dragHandleProps }) => {
-    const assignedUsers = task.assignedTo?.map(id => users.find(u => u._id === id)?.username || 'Desconhecido');
+export const TaskCard: React.FC<TaskCardProps> = ({
+    task,
+    colaboradores,
+    onMoreClick,
+    onRequestDelete,
+    dragHandleProps,
+}) => {
+    // Mapeia os IDs dos colaboradores atribuídos à tarefa para seus objetos completos
+    const assignedColaboradores = task.assignedTo
+        ?.map((id) => colaboradores.find((c) => c._id === id || c._id === id))
+        .filter(Boolean) as IColaborador[];
 
     const renderArrayField = (items: string[] | undefined, Icon: React.ElementType, label: string) => {
         if (!items || items.length === 0) return null;
@@ -22,7 +41,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, on
                 <Icon className="w-3 h-3 mr-1" />
                 <span className="font-medium">{label}:</span>
                 {items.map((item, idx) => (
-                    <span key={idx} className="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                    <span
+                        key={idx}
+                        className="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                    >
                         {item}
                     </span>
                 ))}
@@ -38,10 +60,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, on
                 </CardTitle>
 
                 <div className="flex items-center gap-1">
-                    <GripVertical
-                        className="w-4 h-4 text-slate-400 cursor-grab"
-                        {...dragHandleProps}
-                    />
+                    <GripVertical className="w-4 h-4 text-slate-400 cursor-grab" {...dragHandleProps} />
 
                     <Button
                         variant="outline"
@@ -55,7 +74,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, on
                         <MoreVertical className="w-4 h-4" />
                     </Button>
 
-                    {/* Solicitar exclusão via modal */}
                     {onRequestDelete && (
                         <Button
                             variant="destructive"
@@ -74,9 +92,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, on
 
             <CardContent className="p-4 pt-0 space-y-3">
                 {task.description && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                        {task.description}
-                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{task.description}</p>
                 )}
 
                 {/* Tags */}
@@ -96,22 +112,27 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, on
 
                 {/* Clientes, Projetos, Produtos */}
                 <div className="space-y-1">
-                    {renderArrayField(task.client, Users, "Cliente(s)")}
-                    {renderArrayField(task.project, Briefcase, "Projeto(s)")}
-                    {renderArrayField(task.product, Package, "Produto(s)")}
+                    {renderArrayField(task.client, Users, 'Cliente(s)')}
+                    {renderArrayField(task.project, Briefcase, 'Projeto(s)')}
+                    {renderArrayField(task.product, Package, 'Produto(s)')}
                 </div>
 
                 {task.dueDate && (
                     <div className="text-slate-500 dark:text-slate-400 mt-1 flex justify-between gap-1">
-                        <div className='flex items-center font-medium gap-1'>
-                            <Calendar className=" w-3 h-3" /> {new Date(task.dueDate).toLocaleDateString()}
+                        <div className="flex items-center font-medium gap-1">
+                            <Calendar className="w-3 h-3" /> {new Date(task.dueDate).toLocaleDateString()}
                         </div>
                         {task.priority && (
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${task.priority === 'Urgente' ? 'bg-red-500 text-white' :
-                                task.priority === 'Alta' ? 'bg-orange-500 text-white' :
-                                    task.priority === 'Média' ? 'bg-yellow-500 text-black' :
-                                        'bg-gray-500 text-white'
-                                }`}>
+                            <span
+                                className={`px-2 py-1 rounded text-xs font-medium ${task.priority === 'Urgente'
+                                    ? 'bg-red-500 text-white'
+                                    : task.priority === 'Alta'
+                                        ? 'bg-orange-500 text-white'
+                                        : task.priority === 'Média'
+                                            ? 'bg-yellow-500 text-black'
+                                            : 'bg-gray-500 text-white'
+                                    }`}
+                            >
                                 {task.priority}
                             </span>
                         )}
@@ -119,18 +140,26 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, on
                 )}
 
                 <div className="flex items-center justify-between pt-2 border-t dark:border-slate-700">
-                    <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
-                        {assignedUsers && assignedUsers.length > 0 && (
-                            <div className="flex items-center gap-1">
-                                <UserIcon className="w-3 h-3" />
-                                <span>{assignedUsers.join(', ')}</span>
-                            </div>
-                        )}
-                    </div>
+                    {/* Nomes dos colaboradores */}
+                    {assignedColaboradores && assignedColaboradores.length > 0 ? (
+                        <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 flex-wrap">
+                            <UserIcon className="w-3 h-3" />
+                            {assignedColaboradores.map((colaborador, idx) => (
+                                <span key={colaborador._id || colaborador._id}>
+                                    {colaborador.name}
+                                    {idx < assignedColaboradores.length - 1 ? ',' : ''}
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                            <UserIcon className="w-3 h-3" /> Nenhum colaborador
+                        </div>
+                    )}
 
                     {task.subtasks && task.subtasks.length > 0 && (
                         <span className="px-2 py-1 rounded text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                            {task.subtasks?.filter(st => st.done).length}/{task.subtasks?.length}
+                            {task.subtasks?.filter((st) => st.done).length}/{task.subtasks?.length}
                         </span>
                     )}
                 </div>

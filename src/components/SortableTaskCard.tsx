@@ -2,16 +2,16 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TaskCard } from "./TaskCard";
-import { type Task, type User } from "@/types/types";
+import { type Colaborador, type Task } from "@/types/types";
 
 interface SortableTaskCardProps {
     task: Task;
     onMoreClick?: (task: Task) => void;
-    users: User[];
+    colaboradores: Colaborador[];
     onRequestDelete?: (task: Task) => void;
 }
 
-export const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onMoreClick, users, onRequestDelete }) => {
+export const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onMoreClick, colaboradores, onRequestDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task._id! });
 
     const style = {
@@ -21,7 +21,7 @@ export const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onMore
 
     return (
         <div ref={setNodeRef} style={style} {...attributes}>
-            <TaskCard task={task} onMoreClick={onMoreClick} users={users} dragHandleProps={listeners} onRequestDelete={onRequestDelete} />
+            <TaskCard task={task} onMoreClick={onMoreClick} colaboradores={colaboradores} dragHandleProps={listeners} onRequestDelete={onRequestDelete} />
         </div>
     );
 };

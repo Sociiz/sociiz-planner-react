@@ -52,6 +52,7 @@ export type FilterOption = {
 };
 
 export interface Task {
+  colaborador: never[];
   _id: string;
   title: string;
   description?: string;
@@ -76,5 +77,5 @@ export interface User {
 }
 export interface Colaborador {
   _id: string;
-  username: string;
+  name: string;
 }
