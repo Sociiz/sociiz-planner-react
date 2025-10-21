@@ -8,9 +8,10 @@ interface SortableTaskCardProps {
     task: Task;
     onMoreClick?: (task: Task) => void;
     users: User[];
+    onRequestDelete?: (task: Task) => void;
 }
 
-export const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onMoreClick, users }) => {
+export const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onMoreClick, users, onRequestDelete }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task._id! });
 
     const style = {
@@ -20,7 +21,7 @@ export const SortableTaskCard: React.FC<SortableTaskCardProps> = ({ task, onMore
 
     return (
         <div ref={setNodeRef} style={style} {...attributes}>
-            <TaskCard task={task} onMoreClick={onMoreClick} users={users} dragHandleProps={listeners} />
+            <TaskCard task={task} onMoreClick={onMoreClick} users={users} dragHandleProps={listeners} onRequestDelete={onRequestDelete} />
         </div>
     );
 };

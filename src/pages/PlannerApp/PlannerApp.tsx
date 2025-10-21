@@ -7,6 +7,8 @@ import { useTheme } from "@/components/theme-provider";
 import { PlannerHeader } from "./PlannerHeader";
 import { PlannerKanban } from "./PlannerKanban";
 import api from "@/services/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export type Filters = {
     clients: string[];
@@ -36,6 +38,8 @@ export default function PlannerApp() {
     const [activeId, setActiveId] = useState<string | null>(null);
     const [users, setUsers] = useState<{ _id: string; username: string }[]>([]);
 
+    const [confirmDeleteTask, setConfirmDeleteTask] = useState<Task | null>(null);
+
     const { theme, setTheme } = useTheme();
     const { logout } = useAuth();
     const navigate = useNavigate();
@@ -53,6 +57,25 @@ export default function PlannerApp() {
             console.error("Erro ao buscar tasks:", err);
         }
     };
+
+    const handleRequestDelete = (task: Task) => {
+        setConfirmDeleteTask(task);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!confirmDeleteTask) return;
+
+        try {
+            await api.delete(`/tasks/${confirmDeleteTask._id}`);
+            setTasks(prev => prev.filter(t => t._id !== confirmDeleteTask._id));
+        } catch (err) {
+            console.error("Erro ao deletar task:", err);
+        } finally {
+            setConfirmDeleteTask(null);
+        }
+    };
+
+    const handleCancelDelete = () => setConfirmDeleteTask(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -138,7 +161,6 @@ export default function PlannerApp() {
         if (["light", "dark", "system"].includes(newTheme)) setTheme(newTheme as Theme);
     };
 
-    // Extrair valores únicos para filtros
     const getUniqueValues = (tasks: Task[], key: keyof Task): string[] => {
         const values = tasks.flatMap((t) => {
             const value = t[key];
@@ -146,12 +168,13 @@ export default function PlannerApp() {
             if (!value) return [];
 
             if (Array.isArray(value)) {
-                return value.filter((v): v is string => typeof v === 'string');
+                return value.filter((v): v is string => typeof v === "string");
             }
 
-            if (typeof value === 'string') {
+            if (typeof value === "string") {
                 return [value];
             }
+
             return [];
         });
 
@@ -185,6 +208,7 @@ export default function PlannerApp() {
                         openDialog={openDialog}
                         activeId={activeId}
                         setActiveId={setActiveId}
+                        onRequestDelete={handleRequestDelete} // abre modal de confirmação
                     />
                 </main>
 
@@ -195,6 +219,20 @@ export default function PlannerApp() {
                     editingTask={editingTask}
                     users={users}
                 />
+
+                {/* Modal de confirmação de exclusão */}
+                <Dialog open={!!confirmDeleteTask} onOpenChange={handleCancelDelete}>
+                    <DialogContent className="sm:max-w-[400px]">
+                        <DialogHeader>
+                            <DialogTitle>Confirmar exclusão</DialogTitle>
+                        </DialogHeader>
+                        <p>Tem certeza que deseja excluir a task "{confirmDeleteTask?.title}"?</p>
+                        <div className="mt-4 flex justify-end gap-2">
+                            <Button variant="outline" onClick={handleCancelDelete}>Cancelar</Button>
+                            <Button variant="destructive" onClick={handleConfirmDelete}>Excluir</Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );

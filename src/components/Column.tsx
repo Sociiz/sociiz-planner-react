@@ -11,9 +11,10 @@ interface ColumnProps {
     tasks: Task[];
     onTaskClick: (task: Task) => void;
     users: User[];
+    onRequestDelete?: (id: string) => void;
 }
 
-export const Column: React.FC<ColumnProps> = ({ id, title, color, tasks, onTaskClick, users }) => {
+export const Column: React.FC<ColumnProps> = ({ id, title, color, tasks, onTaskClick, users, onRequestDelete }) => {
     const { setNodeRef } = useDroppable({ id: `column-${id}` });
 
     return (
@@ -36,6 +37,7 @@ export const Column: React.FC<ColumnProps> = ({ id, title, color, tasks, onTaskC
                             task={task}
                             onMoreClick={onTaskClick}
                             users={users}
+                            onRequestDelete={(t: Task) => onRequestDelete?.(t._id!)}
                         />
                     ))}
                 </SortableContext>

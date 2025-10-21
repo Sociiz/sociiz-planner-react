@@ -1,17 +1,18 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tag, User as UserIcon, MoreVertical, GripVertical, Calendar, Briefcase, Package, Users } from 'lucide-react';
+import { Tag, User as UserIcon, MoreVertical, GripVertical, Calendar, Briefcase, Package, Users, Trash2 } from 'lucide-react';
 import { type Task, type User } from '../types/types';
 
 interface TaskCardProps {
     task: Task;
     users: User[];
     onMoreClick?: (task: Task) => void;
+    onRequestDelete?: (task: Task) => void; // <-- renomeado para indicar modal
     dragHandleProps?: React.SVGProps<SVGSVGElement>;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, dragHandleProps }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, onRequestDelete, dragHandleProps }) => {
     const assignedUsers = task.assignedTo?.map(id => users.find(u => u._id === id)?.username || 'Desconhecido');
 
     const renderArrayField = (items: string[] | undefined, Icon: React.ElementType, label: string) => {
@@ -53,6 +54,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, dr
                     >
                         <MoreVertical className="w-4 h-4" />
                     </Button>
+
+                    {/* Solicitar exclusão via modal */}
+                    {onRequestDelete && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onRequestDelete(task);
+                            }}
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </Button>
+                    )}
                 </div>
             </CardHeader>
 
@@ -122,4 +138,3 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, users, onMoreClick, dr
         </Card>
     );
 };
-

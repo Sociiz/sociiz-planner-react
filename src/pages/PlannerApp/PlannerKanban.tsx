@@ -23,6 +23,7 @@ interface PlannerKanbanProps {
     openDialog: (task?: Task | null) => void;
     activeId: string | null;
     setActiveId: (id: string | null) => void;
+    onRequestDelete?: (task: Task) => void; // <-- função de solicitação de exclusão via modal
 }
 
 export function PlannerKanban({
@@ -31,6 +32,7 @@ export function PlannerKanban({
     openDialog,
     activeId,
     setActiveId,
+    onRequestDelete,
 }: PlannerKanbanProps) {
     const [users, setUsers] = useState<User[]>([]);
 
@@ -112,12 +114,19 @@ export function PlannerKanban({
                             tasks={getTasksByStatus(column.id)}
                             onTaskClick={openDialog}
                             users={users}
+                            onRequestDelete={onRequestDelete}
                         />
                     ))}
                 </div>
 
                 <DragOverlay>
-                    {activeTask ? <SortableTaskCard task={activeTask} users={users} /> : null}
+                    {activeTask ? (
+                        <SortableTaskCard
+                            task={activeTask}
+                            users={users}
+                            onRequestDelete={onRequestDelete}
+                        />
+                    ) : null}
                 </DragOverlay>
             </DndContext>
         </div>

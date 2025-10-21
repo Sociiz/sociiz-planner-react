@@ -23,6 +23,10 @@ export interface Itag {
   _id: string;
   name: string;
 }
+export interface IColaborador {
+  _id: string;
+  name: string;
+}
 
 export interface Subtask {
   _id?: string;
@@ -67,6 +71,10 @@ export interface Task {
 }
 
 export interface User {
+  _id: string;
+  username: string;
+}
+export interface Colaborador {
   _id: string;
   username: string;
 }
