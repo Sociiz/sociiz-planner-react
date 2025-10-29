@@ -46,7 +46,7 @@ export function StatusModal({ open, onClose }: StatusModalProps) {
             }
             fetchStatus();
         } catch (err) {
-            console.error("Erro ao salvar tag:", err);
+            console.error("Erro ao salvar status:", err);
         } finally {
             setLoading(false);
         }

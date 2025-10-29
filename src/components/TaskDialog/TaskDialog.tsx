@@ -7,7 +7,7 @@ import { useAuth } from "@/context/authContext";
 import {
     type Task,
     type Subtask,
-    type Status,
+    type IStatus,
     type EvaluationStatus,
     type IClient,
     type IProject,
@@ -25,11 +25,12 @@ import { ProjectService } from "@/services/projectService";
 import { ProductService } from "@/services/productService";
 import { tagService } from "@/services/tagService";
 import { ColaboradorService } from "@/services/colaboradorService";
+import { statusService } from "@/services/statusService";
 
 type TaskFormData = {
     title: string;
     description?: string;
-    status: Status;
+    status: string;
     evaluationStatus: EvaluationStatus;
     createdBy: string;
     clientNames: string[];
@@ -75,6 +76,8 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         priority: "Média",
     });
 
+    const [statusList, setStatusList] = useState<IStatus[]>([]);
+    // const [loadingStatus, setLoadingStatus] = useState(false);
     const [clients, setClients] = useState<IClient[]>([]);
     const [projects, setProjects] = useState<IProject[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
@@ -151,13 +154,14 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     const fetchAllData = async () => {
         setLoadingData(true);
         try {
-            const [clientsData, projectsData, productsData, tagsData, colaboradorData] =
+            const [clientsData, projectsData, productsData, tagsData, colaboradorData, statusData] =
                 await Promise.all([
                     ClientService.getAll(),
                     ProjectService.getAll(),
                     ProductService.getAll(),
                     tagService.getAll(),
                     ColaboradorService.getAll(),
+                    statusService.getAll(),
                 ]);
 
             setClients(clientsData);
@@ -165,6 +169,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             setProducts(productsData);
             setTags(tagsData);
             setColaborador(colaboradorData);
+            setStatusList(statusData);
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
         } finally {
@@ -366,13 +371,11 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                     <TaskSelect
                                         label="Status"
                                         value={formData.status}
-                                        options={[
-                                            { label: "Backlog", value: "backlog" },
-                                            { label: "A Fazer", value: "todo" },
-                                            { label: "Em Progresso", value: "inprogress" },
-                                            { label: "Concluído", value: "done" },
-                                        ]}
-                                        onChange={(v) => handleChange("status", v as Status)}
+                                        options={statusList.map((s) => ({
+                                            label: s.name,
+                                            value: s._id,
+                                        }))}
+                                        onChange={(v) => handleChange("status", v as string)}
                                     />
                                     <TaskSelect
                                         label="Avaliação"

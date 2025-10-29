@@ -1,7 +1,5 @@
 export type Theme = "light" | "dark" | "system";
 
-export type Status = "backlog" | "todo" | "inprogress" | "done";
-
 export type EvaluationStatus = "pending" | "approved" | "rejected";
 
 export type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
@@ -26,6 +24,7 @@ export interface Itag {
 export interface IStatus {
   _id: string;
   name: string;
+  color?: string;
 }
 export interface IColaborador {
   _id: string;
@@ -60,7 +59,7 @@ export interface Task {
   _id: string;
   title: string;
   description?: string;
-  status: Status;
+  status: string;
   evaluationStatus?: EvaluationStatus;
   priority?: Priority;
   client?: string[];

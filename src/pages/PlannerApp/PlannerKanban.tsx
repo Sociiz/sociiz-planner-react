@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
     DndContext,
     DragOverlay,
@@ -11,10 +11,9 @@ import {
     KeyboardSensor,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { COLUMNS } from "@/constants/constants";
 import { Column } from "@/components/Column";
 import { SortableTaskCard } from "@/components/SortableTaskCard";
-import { type Task, type Status, type Colaborador } from "@/types/types";
+import { type Task, type Colaborador, type IStatus } from "@/types/types";
 import api from "@/services/api";
 
 interface PlannerKanbanProps {
@@ -36,13 +35,29 @@ export function PlannerKanban({
     colaboradores,
     onRequestDelete,
 }: PlannerKanbanProps) {
+    const [statusList, setStatusList] = useState<IStatus[]>([]);
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
-    const getTasksByStatus = (status: Status) =>
-        tasks.filter((t) => t.status === status);
+    // Puxar status do backend
+    useEffect(() => {
+        async function fetchStatus() {
+            try {
+                const res = await api.get("/status");
+                setStatusList(res.data); // [{_id, name, color}]
+            } catch (err) {
+                console.error("Erro ao carregar status:", err);
+            }
+        }
+        fetchStatus();
+    }, []);
+
+    // Filtrar tasks por status dinâmico
+    const getTasksByStatus = (statusId: string) =>
+        tasks.filter((t) => t.status === statusId);
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
@@ -56,9 +71,10 @@ export function PlannerKanban({
         const activeTask = tasks.find((t) => t._id === active.id);
         if (!activeTask) return;
 
-        let newStatus: Status | null = null;
+        let newStatus: string | null = null;
+
         if (over.id.toString().startsWith("column-")) {
-            newStatus = over.id.toString().replace("column-", "") as Status;
+            newStatus = over.id.toString().replace("column-", "");
         } else {
             const overTask = tasks.find((t) => t._id === over.id);
             if (overTask) newStatus = overTask.status;
@@ -89,13 +105,13 @@ export function PlannerKanban({
                 onDragEnd={handleDragEnd}
             >
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {COLUMNS.map((column) => (
+                    {statusList.map((status) => (
                         <Column
-                            key={column.id}
-                            id={column.id}
-                            title={column.title}
-                            color={column.color}
-                            tasks={getTasksByStatus(column.id)}
+                            key={status._id}
+                            id={status._id}
+                            title={status.name}
+                            color={status.color ?? "bg-gray-200"}
+                            tasks={getTasksByStatus(status._id)}
                             onTaskClick={openDialog}
                             colaboradores={colaboradores}
                             onRequestDelete={onRequestDelete}
