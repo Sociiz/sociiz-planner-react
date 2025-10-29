@@ -23,6 +23,10 @@ export interface Itag {
   _id: string;
   name: string;
 }
+export interface IStatus {
+  _id: string;
+  name: string;
+}
 export interface IColaborador {
   _id: string;
   name: string;
