@@ -1,4 +1,4 @@
-import { Sun, Moon, Plus, LogOut, Menu } from "lucide-react";
+import { Sun, Moon, Plus, LogOut, Menu, Layout, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilterPanel } from "@/components/FilterPanel";
 import type { Filters, FilterOption } from "@/types/types";
@@ -16,6 +16,8 @@ interface PlannerHeaderProps {
     assignedToOptions: FilterOption[];
     tagsOptions: string[];
     prioritiesOptions: string[];
+    viewMode: "status" | "colaborador";
+    setViewMode: (mode: "status" | "colaborador") => void;
     onToggleSidebar?: () => void;
 }
 
@@ -32,6 +34,8 @@ export function PlannerHeader({
     assignedToOptions,
     tagsOptions,
     prioritiesOptions,
+    viewMode,
+    setViewMode,
     onToggleSidebar,
 }: PlannerHeaderProps) {
     const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
@@ -58,6 +62,25 @@ export function PlannerHeader({
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                                setViewMode(viewMode === "status" ? "colaborador" : "status")
+                            }
+                            title={
+                                viewMode === "status"
+                                    ? "Visualizar por colaborador"
+                                    : "Visualizar por status"
+                            }
+                        >
+                            {viewMode === "status" ? (
+                                <Users className="w-5 h-5" />
+                            ) : (
+                                <Layout className="w-5 h-5" />
+                            )}
+                        </Button>
+
                         <Button variant="outline" size="icon" onClick={toggleTheme}>
                             {theme === "dark" ? (
                                 <Sun className="h-4 w-4" />
@@ -82,7 +105,6 @@ export function PlannerHeader({
                     </div>
                 </div>
 
-                {/* Painel de Filtros */}
                 <FilterPanel
                     filters={filters}
                     setFilters={setFilters}

@@ -55,7 +55,7 @@ export type FilterOption = {
 };
 
 export interface Task {
-  colaborador: never[];
+  colaborador?: string;
   _id: string;
   title: string;
   description?: string;

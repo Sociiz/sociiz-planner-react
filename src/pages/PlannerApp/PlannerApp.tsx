@@ -37,8 +37,11 @@ export default function PlannerApp() {
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [colaboradores, setColaboradores] = useState<{ _id: string; name: string }[]>([]);
-
     const [confirmDeleteTask, setConfirmDeleteTask] = useState<Task | null>(null);
+
+    const [viewMode, setViewMode] = useState<"status" | "colaborador">(
+        () => (localStorage.getItem("kanbanViewMode") as "status" | "colaborador") || "status"
+    );
 
     const { theme, setTheme } = useTheme();
     const { logout } = useAuth();
@@ -64,10 +67,9 @@ export default function PlannerApp() {
 
     const handleConfirmDelete = async () => {
         if (!confirmDeleteTask) return;
-
         try {
             await api.delete(`/tasks/${confirmDeleteTask._id}`);
-            setTasks(prev => prev.filter(t => t._id !== confirmDeleteTask._id));
+            setTasks((prev) => prev.filter((t) => t._id !== confirmDeleteTask._id));
         } catch (err) {
             console.error("Erro ao deletar task:", err);
         } finally {
@@ -91,7 +93,10 @@ export default function PlannerApp() {
         fetchColaboradores();
     }, []);
 
-    // Filtra tasks
+    useEffect(() => {
+        localStorage.setItem("kanbanViewMode", viewMode);
+    }, [viewMode]);
+
     useEffect(() => {
         let filtered = [...tasks];
 
@@ -199,10 +204,13 @@ export default function PlannerApp() {
                     assignedToOptions={assignedToOptions}
                     tagsOptions={getUniqueValues(tasks, "tags")}
                     prioritiesOptions={["Baixa", "Média", "Alta", "Urgente"]}
+                    viewMode={viewMode}
+                    setViewMode={setViewMode}
                 />
 
                 <main className="flex-1 overflow-y-auto p-4">
                     <PlannerKanban
+                        viewMode={viewMode}
                         tasks={filteredTasks}
                         setTasks={setTasks}
                         openDialog={openDialog}
@@ -221,7 +229,6 @@ export default function PlannerApp() {
                     colaboradores={colaboradores}
                 />
 
-                {/* Modal de confirmação de exclusão */}
                 <Dialog open={!!confirmDeleteTask} onOpenChange={handleCancelDelete}>
                     <DialogContent className="sm:max-w-[400px]">
                         <DialogHeader>
