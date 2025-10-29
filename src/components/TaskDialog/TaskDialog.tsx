@@ -239,7 +239,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             assignedTo: formData.assignedToInput,
             subtasks: formData.subtasksInputArray,
             dueDate: formData.dueDate,
-            colaborador: []
+            colaborador: ""
         };
 
         onSubmit(newTask);
