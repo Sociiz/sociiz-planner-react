@@ -9,6 +9,7 @@ import { PlannerKanban } from "./PlannerKanban";
 import api from "@/services/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { PostItSidebar } from "@/components/SidebarPostIt/PostitSidebar";
 
 export type Filters = {
     clients: string[];
@@ -43,6 +44,8 @@ export default function PlannerApp() {
         () => (localStorage.getItem("kanbanViewMode") as "status" | "colaborador") || "status"
     );
 
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
     const { theme, setTheme } = useTheme();
     const { logout } = useAuth();
     const navigate = useNavigate();
@@ -51,6 +54,8 @@ export default function PlannerApp() {
         setEditingTask(task ?? null);
         setIsDialogOpen(true);
     };
+
+    const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
     const refreshTasks = async () => {
         try {
@@ -157,11 +162,6 @@ export default function PlannerApp() {
         }
     };
 
-    const handleLogout = () => {
-        logout();
-        navigate("/login");
-    };
-
     const handleThemeChange = (newTheme: string) => {
         if (["light", "dark", "system"].includes(newTheme)) setTheme(newTheme as Theme);
     };
@@ -190,12 +190,13 @@ export default function PlannerApp() {
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
-            <div className="flex-1 flex flex-col">
+            {/* Conteúdo principal */}
+            <div className="flex flex-1 flex-col">
                 <PlannerHeader
                     theme={theme}
                     setTheme={handleThemeChange}
                     onNewTask={() => openDialog(null)}
-                    onLogout={handleLogout}
+                    onLogout={() => { logout(); navigate("/login"); }}
                     filters={filters}
                     setFilters={setFilters}
                     clientsOptions={getUniqueValues(tasks, "client")}
@@ -242,6 +243,14 @@ export default function PlannerApp() {
                     </DialogContent>
                 </Dialog>
             </div>
+
+            {/* Sidebar à direita */}
+            {isSidebarOpen && (
+                <PostItSidebar
+                    isOpen={isSidebarOpen}
+                    onToggle={toggleSidebar}
+                />
+            )}
         </div>
     );
 }

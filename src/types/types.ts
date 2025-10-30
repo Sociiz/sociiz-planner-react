@@ -93,3 +93,18 @@ export interface Colaborador {
   _id: string;
   name: string;
 }
+
+export interface Note {
+  _id: string;
+  content: string;
+  timestamp: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoteResponse {
+  success: boolean;
+  data: Note | Note[];
+  count?: number;
+  message?: string;
+}
