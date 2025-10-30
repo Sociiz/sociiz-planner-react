@@ -38,7 +38,7 @@ export const Column: React.FC<ColumnProps> = ({
 
             <div
                 ref={setNodeRef}
-                className="flex-1 overflow-y-auto max-h-full p-4 space-y-3 rounded-b-lg scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700"
+                className="flex-1 overflow-y-auto h-full p-4 space-y-3 rounded-b-lg scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700"
             >
                 <SortableContext items={tasks.map((t) => t._id!)} strategy={verticalListSortingStrategy}>
                     {tasks.map((task) => (

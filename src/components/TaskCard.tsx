@@ -15,7 +15,11 @@ import {
 import { type Task, type IColaborador } from '../types/types';
 
 interface TaskCardProps {
-    task: Task;
+    task: Task & {
+        clientImages?: string[];
+        projectImages?: string[];
+        productImages?: string[];
+    };
     colaboradores: IColaborador[];
     onMoreClick?: (task: Task) => void;
     onRequestDelete?: (task: Task) => void;
@@ -29,9 +33,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     onRequestDelete,
     dragHandleProps,
 }) => {
-    // Mapeia os IDs dos colaboradores atribuídos à tarefa para seus objetos completos
     const assignedColaboradores = task.assignedTo
-        ?.map((id) => colaboradores.find((c) => c._id === id || c._id === id))
+        ?.map((id) => colaboradores.find((c) => c._id === id))
         .filter(Boolean) as IColaborador[];
 
     const renderArrayField = (items: string[] | undefined, Icon: React.ElementType, label: string) => {
@@ -54,14 +57,38 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
     return (
         <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-blue-500">
+            <div className="flex m-2 shrink-0 justify-between items-center gap-2 mb-2">
+                {task.clientImages?.map((url, idx) => url && (
+                    <img
+                        key={idx}
+                        src={url}
+                        alt="Cliente"
+                        className="w-16 h-16 rounded-md border object-cover"
+                    />
+                ))}
+                {task.projectImages?.map((url, idx) => url && (
+                    <img
+                        key={idx}
+                        src={url}
+                        alt="Projeto"
+                        className="w-16 h-16 rounded-md border object-cover"
+                    />
+                ))}
+                {task.productImages?.map((url, idx) => url && (
+                    <img
+                        key={idx}
+                        src={url}
+                        alt="Produto"
+                        className="w-16 h-16 rounded-md border object-cover"
+                    />
+                ))}
+            </div>
             <CardHeader className="p-4 pb-2 flex justify-between items-start">
                 <CardTitle className="text-base font-semibold text-slate-800 dark:text-slate-200">
                     {task.title}
                 </CardTitle>
-
                 <div className="flex items-center gap-1">
                     <GripVertical className="w-4 h-4 text-slate-400 cursor-grab" {...dragHandleProps} />
-
                     <Button
                         variant="outline"
                         size="sm"
@@ -73,7 +100,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     >
                         <MoreVertical className="w-4 h-4" />
                     </Button>
-
                     {onRequestDelete && (
                         <Button
                             variant="destructive"
@@ -91,6 +117,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </CardHeader>
 
             <CardContent className="p-4 pt-0 space-y-3">
+
                 {task.description && (
                     <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{task.description}</p>
                 )}
@@ -140,12 +167,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 )}
 
                 <div className="flex items-center justify-between pt-2 border-t dark:border-slate-700">
-                    {/* Nomes dos colaboradores */}
                     {assignedColaboradores && assignedColaboradores.length > 0 ? (
                         <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 flex-wrap">
                             <UserIcon className="w-3 h-3" />
                             {assignedColaboradores.map((colaborador, idx) => (
-                                <span key={colaborador._id || colaborador._id}>
+                                <span key={colaborador._id}>
                                     {colaborador.name}
                                     {idx < assignedColaboradores.length - 1 ? ',' : ''}
                                 </span>

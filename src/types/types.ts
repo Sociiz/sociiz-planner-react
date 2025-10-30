@@ -4,6 +4,14 @@ export type EvaluationStatus = "pending" | "approved" | "rejected";
 
 export type Priority = "Baixa" | "Média" | "Alta" | "Urgente";
 
+export interface IImage {
+  _id?: string;
+  filename: string;
+  path: string;
+  url: string;
+  createdAt?: string;
+}
+
 export interface IClient {
   _id: string;
   name: string;
@@ -62,6 +70,9 @@ export interface Task {
   status: string;
   evaluationStatus?: EvaluationStatus;
   priority?: Priority;
+  clientImages?: string[];
+  projectImages?: string[];
+  productImages?: string[];
   client?: string[];
   project?: string[];
   product?: string[];
