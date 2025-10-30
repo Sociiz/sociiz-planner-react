@@ -7,7 +7,6 @@ import { ItemForm } from "../../ItemForm";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { uploadService } from "@/services/uploadService";
 
 interface Project {
     _id?: string;
@@ -20,6 +19,15 @@ interface ProjectModalProps {
     open: boolean;
     onClose: () => void;
 }
+
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+    });
+};
 
 export function ProjectModal({ open, onClose }: ProjectModalProps) {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -42,7 +50,6 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
         if (open) fetchProjects();
     }, [open]);
 
-    // Atualiza preview quando muda o arquivo
     useEffect(() => {
         if (!file) {
             setPreview(editingProject?.imageUrl || null);
@@ -59,9 +66,7 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
             let imageUrl = editingProject?.imageUrl;
 
             if (file) {
-                // envia para o serviço de upload e pega a URL
-                const uploaded = await uploadService.upload(file);
-                imageUrl = uploaded.url;
+                imageUrl = await fileToBase64(file);
             }
 
             const payload = { ...data, imageUrl };
@@ -106,16 +111,10 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
                         <DialogTitle>Gerenciar Projetos</DialogTitle>
                     </DialogHeader>
 
-                    {/* Upload e Preview */}
                     <div className="mb-4 grid gap-2">
                         <Label htmlFor="file">Imagem de capa</Label>
                         {preview && <img src={preview} alt="Preview" className="w-32 h-32 rounded object-cover border mb-2" />}
-                        <Input
-                            id="file"
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        />
+                        <Input id="file" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
                     </div>
 
                     <ItemForm
@@ -125,7 +124,6 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
                         submitLabel={editingProject ? "Salvar Alterações" : "Adicionar Projeto"}
                     />
 
-                    {/* Lista de projetos */}
                     <ScrollArea className="mt-4 h-48">
                         {projects.map((p) => (
                             <div key={p._id} className="flex justify-between items-center border-b py-2 text-sm text-slate-700 dark:text-slate-200">

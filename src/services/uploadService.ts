@@ -1,30 +1,17 @@
-import api from "./api";
-
-export interface IUploadFile {
-  originalName: string;
-  filename: string;
-  path: string;
-  url: string;
-}
+// services/uploadService.ts
 
 export const uploadService = {
-  upload: (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    return api
-      .post<{ success: boolean; message: string; file: IUploadFile }>(
-        "/upload",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      )
-      .then((res) => res.data.file);
+  /**
+   * Converte um arquivo em Base64
+   * @param file File
+   * @returns Promise<string> Base64 do arquivo
+   */
+  upload: (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (err) => reject(err);
+    });
   },
-
-  delete: (filename: string) =>
-    api.delete(`/uploads/${filename}`).then((res) => res.data),
-
-  getAll: () => api.get<IUploadFile[]>("/uploads").then((res) => res.data),
 };

@@ -7,7 +7,6 @@ import { ItemForm } from "@/components/ItemForm";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { uploadService } from "@/services/uploadService";
 
 interface Product {
     _id?: string;
@@ -19,6 +18,16 @@ interface ProductModalProps {
     open: boolean;
     onClose: () => void;
 }
+
+// utilitário para converter arquivo em base64
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+    });
+};
 
 export function ProductModal({ open, onClose }: ProductModalProps) {
     const [products, setProducts] = useState<Product[]>([]);
@@ -41,7 +50,6 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
         if (open) fetchProducts();
     }, [open]);
 
-    // Atualiza preview quando muda o arquivo
     useEffect(() => {
         if (!file) {
             setPreview(editingProduct?.imageUrl || null);
@@ -58,9 +66,7 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
             let imageUrl = editingProduct?.imageUrl;
 
             if (file) {
-                // envia para o serviço de upload e pega a URL
-                const uploaded = await uploadService.upload(file);
-                imageUrl = uploaded.url;
+                imageUrl = await fileToBase64(file);
             }
 
             const payload = { ...data, imageUrl };
@@ -105,7 +111,6 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
                         <DialogTitle>Gerenciar Produtos</DialogTitle>
                     </DialogHeader>
 
-                    {/* Upload e Preview */}
                     <div className="mb-4 grid gap-2">
                         <Label htmlFor="file">Imagem do Produto</Label>
                         {preview && <img src={preview} alt="Preview" className="w-32 h-32 rounded object-cover border mb-2" />}
@@ -119,7 +124,6 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
                         submitLabel={editingProduct ? "Salvar Alterações" : "Adicionar Produto"}
                     />
 
-                    {/* Lista de produtos */}
                     <ScrollArea className="mt-4 h-48">
                         {products.map((p) => (
                             <div key={p._id} className="flex justify-between items-center border-b py-2 text-sm text-slate-700 dark:text-slate-200">
