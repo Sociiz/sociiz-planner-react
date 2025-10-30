@@ -22,7 +22,7 @@ const colors = [
 
 export const PostItSidebar: React.FC<PostItSidebarProps> = ({
     isOpen = true,
-    onToggle
+    // onToggle
 }) => {
     const [notes, setNotes] = useState<Note[]>([]);
     const [newNote, setNewNote] = useState<string>('');
