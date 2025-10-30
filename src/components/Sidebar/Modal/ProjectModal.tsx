@@ -7,7 +7,6 @@ import { ItemForm } from "../../ItemForm";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { uploadService } from "@/services/uploadService";
 
 interface Project {
     _id?: string;
@@ -26,8 +25,8 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({ open: false });
-    const [file, setFile] = useState<File | null>(null);
-    const [preview, setPreview] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string>("");
 
     const fetchProjects = async () => {
         try {
@@ -42,26 +41,38 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
         if (open) fetchProjects();
     }, [open]);
 
-    // Atualiza preview quando muda o arquivo
-    useEffect(() => {
-        if (!file) {
-            setPreview(editingProject?.imageUrl || null);
-            return;
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
         }
-        const objectUrl = URL.createObjectURL(file);
-        setPreview(objectUrl);
-        return () => URL.revokeObjectURL(objectUrl);
-    }, [file, editingProject]);
+    };
+
+    const uploadImage = async (file: File): Promise<string | null> => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await api.post("/upload", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            return res.data?.file?.url ?? null;
+        } catch (err) {
+            console.error("Erro ao fazer upload da imagem:", err);
+            return null;
+        }
+    };
 
     const handleSubmit = async (data: { name: string; description?: string }) => {
         setLoading(true);
         try {
-            let imageUrl = editingProject?.imageUrl;
+            let imageUrl = editingProject?.imageUrl ?? "";
 
-            if (file) {
-                // envia para o serviço de upload e pega a URL
-                const uploaded = await uploadService.upload(file);
-                imageUrl = uploaded.url;
+            // Faz upload se uma nova imagem foi selecionada
+            if (imageFile) {
+                const uploadedUrl = await uploadImage(imageFile);
+                if (uploadedUrl) imageUrl = uploadedUrl;
             }
 
             const payload = { ...data, imageUrl };
@@ -73,8 +84,8 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
                 await api.post("/projects", payload);
             }
 
-            setFile(null);
-            setPreview(null);
+            setImageFile(null);
+            setImagePreview("");
             fetchProjects();
         } catch (err) {
             console.error("Erro ao salvar projeto:", err);
@@ -85,7 +96,8 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
 
     const handleEditClick = (project: Project) => {
         setEditingProject(project);
-        setPreview(project.imageUrl || null);
+        setImagePreview(project.imageUrl || "");
+        setImageFile(null);
     };
 
     const handleDelete = async (id: string) => {
@@ -109,13 +121,14 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
                     {/* Upload e Preview */}
                     <div className="mb-4 grid gap-2">
                         <Label htmlFor="file">Imagem de capa</Label>
-                        {preview && <img src={preview} alt="Preview" className="w-32 h-32 rounded object-cover border mb-2" />}
-                        <Input
-                            id="file"
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => setFile(e.target.files?.[0] || null)}
-                        />
+                        {imagePreview && (
+                            <img
+                                src={imagePreview}
+                                alt="Preview"
+                                className="w-32 h-32 rounded object-cover border mb-2"
+                            />
+                        )}
+                        <Input type="file" accept="image/*" onChange={handleFileChange} />
                     </div>
 
                     <ItemForm
@@ -128,17 +141,42 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
                     {/* Lista de projetos */}
                     <ScrollArea className="mt-4 h-48">
                         {projects.map((p) => (
-                            <div key={p._id} className="flex justify-between items-center border-b py-2 text-sm text-slate-700 dark:text-slate-200">
+                            <div
+                                key={p._id}
+                                className="flex justify-between items-center border-b py-2 text-sm text-slate-700 dark:text-slate-200"
+                            >
                                 <div className="flex items-center gap-2">
-                                    {p.imageUrl && <img src={p.imageUrl} alt={p.name} className="w-20 h-20 rounded-md border object-cover" />}
+                                    {p.imageUrl && (
+                                        <img
+                                            src={p.imageUrl}
+                                            alt={p.name}
+                                            className="w-20 h-20 rounded-md border object-cover"
+                                        />
+                                    )}
                                     <div>
                                         <p className="font-medium">{p.name}</p>
-                                        {p.description && <p className="text-xs text-slate-500">{p.description}</p>}
+                                        {p.description && (
+                                            <p className="text-xs text-slate-500">{p.description}</p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => handleEditClick(p)}>Editar</Button>
-                                    <Button variant="destructive" size="sm" onClick={() => setConfirmDelete({ open: true, id: p._id })}>Excluir</Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEditClick(p)}
+                                    >
+                                        Editar
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() =>
+                                            setConfirmDelete({ open: true, id: p._id })
+                                        }
+                                    >
+                                        Excluir
+                                    </Button>
                                 </div>
                             </div>
                         ))}
