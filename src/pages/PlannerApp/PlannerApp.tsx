@@ -6,7 +6,6 @@ import { type Task, type Theme, type FilterOption } from "@/types/types";
 import { useTheme } from "@/components/theme-provider";
 import { PlannerHeader } from "./PlannerHeader";
 import { PlannerKanban } from "./PlannerKanban";
-import api from "@/services/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PostItSidebar } from "@/components/SidebarPostIt/PostitSidebar";
@@ -47,8 +46,9 @@ export default function PlannerApp() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const { theme, setTheme } = useTheme();
-    const { logout } = useAuth();
+    const { logout, token } = useAuth();
     const navigate = useNavigate();
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const openDialog = (task?: Task | null) => {
         setEditingTask(task ?? null);
@@ -59,8 +59,17 @@ export default function PlannerApp() {
 
     const refreshTasks = async () => {
         try {
-            const response = await api.get<Task[]>("/tasks");
-            setTasks(response.data);
+            const response = await fetch(`${API_BASE_URL}/tasks`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!response.ok) throw new Error("Erro ao buscar tasks");
+
+            const data = await response.json();
+            setTasks(data);
         } catch (err) {
             console.error("Erro ao buscar tasks:", err);
         }
@@ -73,7 +82,16 @@ export default function PlannerApp() {
     const handleConfirmDelete = async () => {
         if (!confirmDeleteTask) return;
         try {
-            await api.delete(`/tasks/${confirmDeleteTask._id}`);
+            const response = await fetch(`${API_BASE_URL}/tasks/${confirmDeleteTask._id}`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!response.ok) throw new Error("Erro ao deletar task");
+
             setTasks((prev) => prev.filter((t) => t._id !== confirmDeleteTask._id));
         } catch (err) {
             console.error("Erro ao deletar task:", err);
@@ -87,8 +105,17 @@ export default function PlannerApp() {
     useEffect(() => {
         const fetchColaboradores = async () => {
             try {
-                const response = await api.get("/colaboradores");
-                setColaboradores(response.data);
+                const response = await fetch(`${API_BASE_URL}/colaboradores`, {
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!response.ok) throw new Error("Erro ao buscar colaboradores");
+
+                const data = await response.json();
+                setColaboradores(data);
             } catch (err) {
                 console.error("Erro ao buscar colaboradores:", err);
             }
@@ -96,7 +123,7 @@ export default function PlannerApp() {
 
         refreshTasks();
         fetchColaboradores();
-    }, []);
+    }, [token, API_BASE_URL]);
 
     useEffect(() => {
         localStorage.setItem("kanbanViewMode", viewMode);
@@ -149,9 +176,27 @@ export default function PlannerApp() {
             const payload = { ...task, subtasks: validSubtasks };
 
             if (editingTask) {
-                await api.put(`/tasks/${task._id}`, payload);
+                const response = await fetch(`${API_BASE_URL}/tasks/${task._id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("Erro ao atualizar task");
             } else {
-                await api.post("/tasks", payload);
+                const response = await fetch(`${API_BASE_URL}/tasks`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("Erro ao criar task");
             }
 
             setIsDialogOpen(false);
@@ -190,7 +235,6 @@ export default function PlannerApp() {
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
-            {/* Conteúdo principal */}
             <div className="flex flex-1 flex-col">
                 <PlannerHeader
                     theme={theme}
@@ -244,7 +288,6 @@ export default function PlannerApp() {
                 </Dialog>
             </div>
 
-            {/* Sidebar à direita */}
             {isSidebarOpen && (
                 <PostItSidebar
                     isOpen={isSidebarOpen}

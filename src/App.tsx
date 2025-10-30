@@ -1,12 +1,13 @@
-import { ThemeProvider } from "@/components/theme-provider"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { AuthProvider } from "@/context/authContext"
-import { PrivateRoute } from "@/PrivateRoute"
+import { ThemeProvider } from "@/components/theme-provider";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/context/authContext";
+import { PrivateRoute } from "@/PrivateRoute";
+import { TokenRefreshModal } from "@/components/TokenRefreshModal";
 
-import Login from "@/pages/Login/Login"
-import RegisterPage from "@/pages/Register/Register"
-import PlannerApp from "./pages/PlannerApp/PlannerApp"
-import { AppLayout } from "./components/AppLayout"
+import Login from "@/pages/Login/Login";
+import RegisterPage from "@/pages/Register/Register";
+import PlannerApp from "./pages/PlannerApp/PlannerApp";
+import { AppLayout } from "./components/AppLayout";
 
 function App() {
   return (
@@ -30,13 +31,14 @@ function App() {
               }
             />
 
-            {/* Redireciona qualquer outra rota para login */}
             <Route path="*" element={<Login />} />
           </Routes>
+
+          <TokenRefreshModal />
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;

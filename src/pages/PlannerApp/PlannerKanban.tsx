@@ -14,7 +14,7 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "@/components/Column";
 import { SortableTaskCard } from "@/components/SortableTaskCard";
 import { type Task, type Colaborador, type IStatus } from "@/types/types";
-import api from "@/services/api";
+import { useAuth } from "@/context/authContext";
 
 interface PlannerKanbanProps {
     tasks: Task[];
@@ -38,6 +38,8 @@ export function PlannerKanban({
     viewMode,
 }: PlannerKanbanProps) {
     const [statusList, setStatusList] = useState<IStatus[]>([]);
+    const { token } = useAuth();
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -47,14 +49,23 @@ export function PlannerKanban({
     useEffect(() => {
         async function fetchStatus() {
             try {
-                const res = await api.get("/status");
-                setStatusList(res.data);
+                const res = await fetch(`${API_BASE_URL}/status`, {
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!res.ok) throw new Error("Erro ao carregar status");
+
+                const data = await res.json();
+                setStatusList(data);
             } catch (err) {
                 console.error("Erro ao carregar status:", err);
             }
         }
         fetchStatus();
-    }, []);
+    }, [token, API_BASE_URL]);
 
     useEffect(() => {
         localStorage.setItem("kanbanViewMode", viewMode);
@@ -67,12 +78,9 @@ export function PlannerKanban({
         tasks.filter((t) => {
             if (!t.assignedTo) return false;
             if (Array.isArray(t.assignedTo)) {
-                return t.assignedTo.some(
-                    (a) =>
-                        a === colabId);
+                return t.assignedTo.some((a) => a === colabId);
             }
-            return (
-                t.assignedTo === colabId);
+            return t.assignedTo === colabId;
         });
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -109,11 +117,8 @@ export function PlannerKanban({
             viewMode === "status"
                 ? activeTask.status === newField
                 : Array.isArray(activeTask.assignedTo)
-                    ? activeTask.assignedTo.some(
-                        (a) => a === newField
-                    )
-                    : activeTask.assignedTo === newField ||
-                    activeTask.assignedTo === newField;
+                    ? activeTask.assignedTo.some((a) => a === newField)
+                    : activeTask.assignedTo === newField;
 
         if (isSameField) return;
 
@@ -127,7 +132,14 @@ export function PlannerKanban({
         );
 
         try {
-            await api.put(`/tasks/${activeTask._id}`, updatedTask);
+            await fetch(`${API_BASE_URL}/tasks/${activeTask._id}`, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(updatedTask)
+            });
         } catch (err) {
             console.error("Erro ao atualizar task:", err);
         }
@@ -157,7 +169,6 @@ export function PlannerKanban({
                                 onRequestDelete={onRequestDelete}
                             />
                         ))
-                        // pra ordenar de a-z pego o nome de cada e comparo e faço uma map
                         : [...colaboradores]
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map((colab) => (

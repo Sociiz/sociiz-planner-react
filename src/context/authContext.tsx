@@ -1,94 +1,200 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { jwtDecode } from "jwt-decode";
 
 interface User {
     id: string;
-    email: string;
+    email?: string;
+}
+
+interface JwtPayload {
+    id: string;
+    email?: string;
+    exp: number;
+    iat: number;
 }
 
 interface AuthContextType {
     user: User | null;
     token: string | null;
-    loading: boolean;
+    isModalOpen: boolean;
+    timeUntilExpiration: number | null;
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, username: string) => Promise<void>;
     logout: () => void;
+    renewToken: () => Promise<boolean>;
+    closeModal: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const storedToken = localStorage.getItem("token");
-    const initialUser = storedToken ? jwtDecode<User>(storedToken) : null;
+const WARNING_TIME_MS = 500 * 1000;
 
-    const [token, setToken] = useState<string | null>(storedToken);
-    const [user, setUser] = useState<User | null>(
-        initialUser
-            ? { id: initialUser.id, email: initialUser.email }
-            : null
+export function AuthProvider({ children }: { children: ReactNode }) {
+    const [token, setToken] = useState<string | null>(() =>
+        localStorage.getItem("authToken")
     );
-    const [loading, setLoading] = useState(false);
+    const [refreshToken, setRefreshToken] = useState<string | null>(() =>
+        localStorage.getItem("refreshToken")
+    );
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [timeUntilExpiration, setTimeUntilExpiration] = useState<number | null>(null);
+    const [user, setUser] = useState<User | null>(() => {
+        const storedToken = localStorage.getItem("authToken");
+        if (!storedToken) return null;
+        try {
+            const decoded: User = jwtDecode(storedToken);
+            return { id: decoded.id, email: decoded.email };
+        } catch {
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("refreshToken");
+            return null;
+        }
+    });
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-    async function login(email: string, password: string) {
-        setLoading(true);
+    const getTokenExpiration = useCallback((jwtToken: string): number | null => {
         try {
-            const res = await fetch(`${API_BASE_URL}/login`, {
+            const decoded = jwtDecode<JwtPayload>(jwtToken);
+            return decoded.exp * 1000;
+        } catch (error) {
+            console.warn("Token inválido:", error);
+            return null;
+        }
+    }, []);
+
+    const logout = useCallback(() => {
+        setUser(null);
+        setToken(null);
+        setRefreshToken(null);
+        setIsModalOpen(false);
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("refreshToken");
+    }, []);
+
+    const closeModal = useCallback(() => {
+        setIsModalOpen(false);
+    }, []);
+
+    const renewToken = useCallback(async (): Promise<boolean> => {
+        if (!refreshToken) {
+            logout();
+            return false;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/refresh-token`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ refreshToken }),
             });
 
             if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.message || "Erro ao fazer login");
+                logout();
+                return false;
             }
 
             const data = await res.json();
-            const token = data.token;
 
-            setToken(token);
-            localStorage.setItem("token", token);
+            setToken(data.token);
+            setRefreshToken(data.refreshToken);
+            localStorage.setItem("authToken", data.token);
+            localStorage.setItem("refreshToken", data.refreshToken);
 
-            const decoded: User = jwtDecode(token);
-            setUser({
-                id: decoded.id,
-                email: decoded.email,
-            });
-        } finally {
-            setLoading(false);
+            const decoded: User = jwtDecode(data.token);
+            setUser({ id: decoded.id, email: decoded.email });
+            setIsModalOpen(false);
+
+            return true;
+        } catch (err) {
+            console.error("Erro ao renovar token:", err);
+            logout();
+            return false;
         }
+    }, [refreshToken, API_BASE_URL, logout]);
+
+    async function login(email: string, password: string) {
+        const res = await fetch(`${API_BASE_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
+
+        if (!res.ok) throw new Error("Erro ao fazer login");
+
+        const data = await res.json();
+
+        setToken(data.token);
+        setRefreshToken(data.refreshToken);
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("refreshToken", data.refreshToken);
+
+        const decoded: User = jwtDecode(data.token);
+        setUser({ id: decoded.id, email: decoded.email });
     }
 
     async function register(email: string, password: string, username: string) {
-        setLoading(true);
-        try {
-            const res = await fetch(`${API_BASE_URL}/register`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password, username }),
-            });
+        const res = await fetch(`${API_BASE_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, username }),
+        });
 
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.message || data.error || "Erro ao registrar usuário");
+        if (!res.ok) throw new Error("Erro ao registrar usuário");
+
+        const data = await res.json();
+
+        setToken(data.token);
+        setRefreshToken(data.refreshToken);
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("refreshToken", data.refreshToken);
+
+        const decoded: User = jwtDecode(data.token);
+        setUser({ id: decoded.id, email: decoded.email });
+    }
+
+    useEffect(() => {
+        let timer: ReturnType<typeof setTimeout> | null = null;
+
+        if (token) {
+            const expirationTime = getTokenExpiration(token);
+            if (!expirationTime) {
+                logout();
+                return;
             }
 
-            await login(email, password);
-        } finally {
-            setLoading(false);
-        }
-    }
+            const now = Date.now();
+            const timeToExpire = expirationTime - now;
+            setTimeUntilExpiration(timeToExpire);
 
-    function logout() {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem("token");
-    }
+            const timeToWarning = timeToExpire - WARNING_TIME_MS;
+
+            if (timeToWarning > 0) {
+                timer = setTimeout(() => setIsModalOpen(true), timeToWarning);
+            } else if (timeToExpire > 0) {
+                setIsModalOpen(true);
+            } else {
+                logout();
+            }
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [token, getTokenExpiration, logout]);
 
     return (
-        <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+        <AuthContext.Provider value={{
+            user,
+            token,
+            isModalOpen,
+            timeUntilExpiration,
+            login,
+            register,
+            logout,
+            renewToken,
+            closeModal
+        }}>
             {children}
         </AuthContext.Provider>
     );
