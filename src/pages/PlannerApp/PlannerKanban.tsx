@@ -143,12 +143,7 @@ export function PlannerKanban({
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div
-                    className={`grid gap-6 ${viewMode === "colaborador"
-                        ? "grid-cols-1 md:grid-cols-3 lg:grid-cols-5"
-                        : "grid-cols-1 md:grid-cols-4"
-                        }`}
-                >
+                <div className="flex gap-6 overflow-x-auto pb-4">
                     {viewMode === "status"
                         ? statusList.map((status) => (
                             <Column
