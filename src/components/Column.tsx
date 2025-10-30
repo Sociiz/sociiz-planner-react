@@ -26,7 +26,7 @@ export const Column: React.FC<ColumnProps> = ({
     const { setNodeRef } = useDroppable({ id: `column-${id}` });
 
     return (
-        <div className="flex flex-col shrink-0 w-[280px] max-w-[280px] bg-slate-50 dark:bg-slate-800 rounded-lg shadow-md">
+        <div className="flex flex-col shrink-0 h-[46rem] w-[280px] max-w-[280px] bg-slate-50 dark:bg-slate-800 rounded-lg shadow-md">
             <div className={`${color} text-black px-4 py-3 rounded-t-lg`}>
                 <h2 className="font-semibold flex items-center justify-between">
                     <span>{title}</span>
