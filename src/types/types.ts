@@ -12,6 +12,11 @@ export interface IImage {
   createdAt?: string;
 }
 
+export interface IUser {
+  _id: string;
+  username: string;
+}
+
 export interface IClient {
   _id: string;
   name: string;

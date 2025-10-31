@@ -18,11 +18,13 @@ import {
 interface User {
     id: string;
     email?: string;
+    isAdmin?: boolean;
 }
 
 interface JwtPayload {
     id: string;
     email?: string;
+    isAdmin?: boolean;
     exp: number;
     iat: number;
 }
@@ -40,7 +42,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 const WARNING_TIME_MS = 60 * 1000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -49,15 +50,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         getRefreshToken()
     );
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [timeUntilExpiration, setTimeUntilExpiration] = useState<number | null>(
-        null
-    );
+    const [timeUntilExpiration, setTimeUntilExpiration] = useState<number | null>(null);
     const [user, setUser] = useState<User | null>(() => {
         const storedToken = getToken();
         if (!storedToken) return null;
         try {
-            const decoded: User = jwtDecode(storedToken);
-            return { id: decoded.id, email: decoded.email };
+            const decoded: JwtPayload = jwtDecode(storedToken);
+            return {
+                id: decoded.id,
+                email: decoded.email,
+                isAdmin: decoded.isAdmin ?? false,
+            };
         } catch {
             clearTokens();
             return null;
@@ -105,14 +108,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             const data = await res.json();
-
             setToken(data.token);
             setRefreshToken(data.refreshToken);
             storeToken(data.token);
             storeRefreshToken(data.refreshToken);
 
-            const decoded: User = jwtDecode(data.token);
-            setUser({ id: decoded.id, email: decoded.email });
+            const decoded: JwtPayload = jwtDecode(data.token);
+            setUser({
+                id: decoded.id,
+                email: decoded.email,
+                isAdmin: decoded.isAdmin ?? false,
+            });
             setIsModalOpen(false);
 
             return true;
@@ -131,7 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         if (!res.ok) throw new Error("Erro ao fazer login");
-
         const data = await res.json();
 
         setToken(data.token);
@@ -139,8 +144,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         storeToken(data.token);
         storeRefreshToken(data.refreshToken);
 
-        const decoded: User = jwtDecode(data.token);
-        setUser({ id: decoded.id, email: decoded.email });
+        const decoded: JwtPayload = jwtDecode(data.token);
+        setUser({
+            id: decoded.id,
+            email: decoded.email,
+            isAdmin: decoded.isAdmin ?? false,
+        });
     }
 
     async function register(email: string, password: string, username: string) {
@@ -151,7 +160,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         if (!res.ok) throw new Error("Erro ao registrar usuário");
-
         const data = await res.json();
 
         setToken(data.token);
@@ -159,8 +167,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         storeToken(data.token);
         storeRefreshToken(data.refreshToken);
 
-        const decoded: User = jwtDecode(data.token);
-        setUser({ id: decoded.id, email: decoded.email });
+        const decoded: JwtPayload = jwtDecode(data.token);
+        setUser({
+            id: decoded.id,
+            email: decoded.email,
+            isAdmin: decoded.isAdmin ?? false,
+        });
     }
 
     useEffect(() => {
@@ -178,7 +190,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setTimeUntilExpiration(timeToExpire);
 
             const timeToWarning = timeToExpire - WARNING_TIME_MS;
-
             if (timeToWarning > 0) {
                 timer = setTimeout(() => setIsModalOpen(true), timeToWarning);
             } else if (timeToExpire > 0) {
