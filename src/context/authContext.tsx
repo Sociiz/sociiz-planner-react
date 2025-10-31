@@ -1,5 +1,20 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+// src/context/AuthContext.tsx
+import {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    useCallback,
+    type ReactNode,
+} from "react";
 import { jwtDecode } from "jwt-decode";
+import {
+    getToken,
+    setToken as storeToken,
+    getRefreshToken,
+    setRefreshToken as storeRefreshToken,
+    clearTokens,
+} from "@/utils/auth";
 
 interface User {
     id: string;
@@ -27,26 +42,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const WARNING_TIME_MS = 500 * 1000;
+const WARNING_TIME_MS = 60 * 1000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [token, setToken] = useState<string | null>(() =>
-        localStorage.getItem("authToken")
-    );
+    const [token, setToken] = useState<string | null>(() => getToken());
     const [refreshToken, setRefreshToken] = useState<string | null>(() =>
-        localStorage.getItem("refreshToken")
+        getRefreshToken()
     );
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [timeUntilExpiration, setTimeUntilExpiration] = useState<number | null>(null);
+    const [timeUntilExpiration, setTimeUntilExpiration] = useState<number | null>(
+        null
+    );
     const [user, setUser] = useState<User | null>(() => {
-        const storedToken = localStorage.getItem("authToken");
+        const storedToken = getToken();
         if (!storedToken) return null;
         try {
             const decoded: User = jwtDecode(storedToken);
             return { id: decoded.id, email: decoded.email };
         } catch {
-            localStorage.removeItem("authToken");
-            localStorage.removeItem("refreshToken");
+            clearTokens();
             return null;
         }
     });
@@ -68,13 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(null);
         setRefreshToken(null);
         setIsModalOpen(false);
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("refreshToken");
+        clearTokens();
     }, []);
 
-    const closeModal = useCallback(() => {
-        setIsModalOpen(false);
-    }, []);
+    const closeModal = useCallback(() => setIsModalOpen(false), []);
 
     const renewToken = useCallback(async (): Promise<boolean> => {
         if (!refreshToken) {
@@ -98,8 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             setToken(data.token);
             setRefreshToken(data.refreshToken);
-            localStorage.setItem("authToken", data.token);
-            localStorage.setItem("refreshToken", data.refreshToken);
+            storeToken(data.token);
+            storeRefreshToken(data.refreshToken);
 
             const decoded: User = jwtDecode(data.token);
             setUser({ id: decoded.id, email: decoded.email });
@@ -126,8 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setToken(data.token);
         setRefreshToken(data.refreshToken);
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("refreshToken", data.refreshToken);
+        storeToken(data.token);
+        storeRefreshToken(data.refreshToken);
 
         const decoded: User = jwtDecode(data.token);
         setUser({ id: decoded.id, email: decoded.email });
@@ -146,8 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setToken(data.token);
         setRefreshToken(data.refreshToken);
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("refreshToken", data.refreshToken);
+        storeToken(data.token);
+        storeRefreshToken(data.refreshToken);
 
         const decoded: User = jwtDecode(data.token);
         setUser({ id: decoded.id, email: decoded.email });
@@ -184,17 +195,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [token, getTokenExpiration, logout]);
 
     return (
-        <AuthContext.Provider value={{
-            user,
-            token,
-            isModalOpen,
-            timeUntilExpiration,
-            login,
-            register,
-            logout,
-            renewToken,
-            closeModal
-        }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                token,
+                isModalOpen,
+                timeUntilExpiration,
+                login,
+                register,
+                logout,
+                renewToken,
+                closeModal,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );
@@ -203,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
     const context = useContext(AuthContext);
-    if (!context) throw new Error("useAuth must be used within AuthProvider");
+    if (!context)
+        throw new Error("useAuth must be used within an AuthProvider");
     return context;
 }
