@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, AlertCircle, Clipboard } from 'lucide-react';
-import { type Note } from '../../types/types';
+import { type Note, type User } from '../../types/types';
 import { NoteService } from '../../services/noteService';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
@@ -58,8 +58,8 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
         if (!newNote.trim()) return;
         try {
             setLoading(true);
-            const note = await NoteService.createNote(newNote);
-            setNotes([note, ...notes]);
+            await NoteService.createNote(newNote);
+            await loadNotes();
             setNewNote('');
             setError(null);
         } catch (err) {
@@ -128,16 +128,6 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
                     <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                         📌 Anotações
                     </h2>
-                    {/* {onToggle && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={onToggle}
-                            className="text-white hover:bg-white/20"
-                        >
-                            <X className="h-5 w-5" />
-                        </Button>
-                    )} */}
                 </div>
 
                 {/* Erro */}
@@ -264,7 +254,10 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
                                             {note.content}
                                         </MarkdownViewer>
 
-                                        <div className="text-xs text-gray-500 mt-3 text-right">
+                                        <div className="flex text-xs text-gray-500 mt-3 justify-between">
+                                            <div className='font-medium'>
+                                                <span>Criado por: {(note.createdBy as User).username} </span>
+                                            </div>
                                             {new Date(note.timestamp).toLocaleString('pt-BR', {
                                                 day: '2-digit',
                                                 month: '2-digit',

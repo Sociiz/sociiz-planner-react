@@ -100,6 +100,7 @@ export interface Note {
   timestamp: number;
   createdAt: string;
   updatedAt: string;
+  createdBy: string | User;
 }
 
 export interface NoteResponse {
