@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, AlertCircle, Clipboard } from 'lucide-react';
-import { type Note, type User } from '../../types/types';
+import { type Note } from '../../types/types';
 import { NoteService } from '../../services/noteService';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
@@ -255,16 +255,23 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
                                         </MarkdownViewer>
 
                                         <div className="flex text-xs text-gray-500 mt-3 justify-between">
-                                            <div className='font-medium'>
-                                                <span>Criado por: {(note.createdBy as User).username} </span>
+                                            <div className="font-medium">
+                                                <span>
+                                                    Criado por:{" "}
+                                                    {note.createdBy && typeof note.createdBy === "object"
+                                                        ? note.createdBy.username
+                                                        : "Usuário desconhecido"}
+                                                </span>
                                             </div>
-                                            {new Date(note.timestamp).toLocaleString('pt-BR', {
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            })}
+                                            <span>
+                                                {new Date(note.timestamp).toLocaleString("pt-BR", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}
+                                            </span>
                                         </div>
                                     </>
                                 )}
