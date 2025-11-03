@@ -58,8 +58,8 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
         if (!newNote.trim()) return;
         try {
             setLoading(true);
-            const note = await NoteService.createNote(newNote);
-            setNotes([note, ...notes]);
+            await NoteService.createNote(newNote);
+            await loadNotes();
             setNewNote('');
             setError(null);
         } catch (err) {
@@ -128,16 +128,6 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
                     <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                         📌 Anotações
                     </h2>
-                    {/* {onToggle && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={onToggle}
-                            className="text-white hover:bg-white/20"
-                        >
-                            <X className="h-5 w-5" />
-                        </Button>
-                    )} */}
                 </div>
 
                 {/* Erro */}
@@ -264,14 +254,24 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
                                             {note.content}
                                         </MarkdownViewer>
 
-                                        <div className="text-xs text-gray-500 mt-3 text-right">
-                                            {new Date(note.timestamp).toLocaleString('pt-BR', {
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            })}
+                                        <div className="flex text-xs text-gray-500 mt-3 justify-between">
+                                            <div className="font-medium">
+                                                <span>
+                                                    Criado por:{" "}
+                                                    {note.createdBy && typeof note.createdBy === "object"
+                                                        ? note.createdBy.username
+                                                        : "Usuário desconhecido"}
+                                                </span>
+                                            </div>
+                                            <span>
+                                                {new Date(note.timestamp).toLocaleString("pt-BR", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}
+                                            </span>
                                         </div>
                                     </>
                                 )}

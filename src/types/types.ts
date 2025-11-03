@@ -12,6 +12,11 @@ export interface IImage {
   createdAt?: string;
 }
 
+export interface IUser {
+  _id: string;
+  username: string;
+}
+
 export interface IClient {
   _id: string;
   name: string;
@@ -100,6 +105,7 @@ export interface Note {
   timestamp: number;
   createdAt: string;
   updatedAt: string;
+  createdBy: string | User;
 }
 
 export interface NoteResponse {
