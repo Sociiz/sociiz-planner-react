@@ -7,7 +7,6 @@ import { ItemForm } from "@/components/ItemForm";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { uploadService } from "@/services/uploadService";
 
 interface Product {
     _id?: string;
@@ -25,8 +24,7 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({ open: false });
-    const [file, setFile] = useState<File | null>(null);
-    const [preview, setPreview] = useState<string | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     const fetchProducts = async () => {
         try {
@@ -41,29 +39,30 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
         if (open) fetchProducts();
     }, [open]);
 
-    // Atualiza preview quando muda o arquivo
-    useEffect(() => {
-        if (!file) {
-            setPreview(editingProduct?.imageUrl || null);
-            return;
+    const fileToBase64 = (file: File): Promise<string> =>
+        new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                resolve(reader.result as string);
+            };
+            reader.onerror = (err) => {
+                console.error("Erro ao converter arquivo para Base64:", err);
+                reject(err);
+            };
+            reader.readAsDataURL(file);
+        });
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setImagePreview(await fileToBase64(file));
         }
-        const objectUrl = URL.createObjectURL(file);
-        setPreview(objectUrl);
-        return () => URL.revokeObjectURL(objectUrl);
-    }, [file, editingProduct]);
+    };
 
     const handleSubmit = async (data: { name: string }) => {
         setLoading(true);
         try {
-            let imageUrl = editingProduct?.imageUrl;
-
-            if (file) {
-                // envia para o serviço de upload e pega a URL
-                const uploaded = await uploadService.upload(file);
-                imageUrl = uploaded.url;
-            }
-
-            const payload = { ...data, imageUrl };
+            const payload = { ...data, coverImage: imagePreview };
 
             if (editingProduct?._id) {
                 await api.put(`/products/${editingProduct._id}`, payload);
@@ -71,9 +70,7 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
             } else {
                 await api.post("/products", payload);
             }
-
-            setFile(null);
-            setPreview(null);
+            setImagePreview("")
             fetchProducts();
         } catch (err) {
             console.error("Erro ao salvar produto:", err);
@@ -84,17 +81,12 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
 
     const handleEditClick = (product: Product) => {
         setEditingProduct(product);
-        setPreview(product.imageUrl || null);
+        setImagePreview(product.imageUrl || null);
     };
 
     const handleDelete = async (id: string) => {
-        try {
-            await api.delete(`/products/${id}`);
-            fetchProducts();
-            setConfirmDelete({ open: false, id: undefined });
-        } catch (err) {
-            console.error("Erro ao excluir produto:", err);
-        }
+        await api.delete(`/products/${id}`);
+        fetchProducts();
     };
 
     return (
@@ -107,9 +99,9 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
 
                     {/* Upload e Preview */}
                     <div className="mb-4 grid gap-2">
-                        <Label htmlFor="file">Imagem do Produto</Label>
-                        {preview && <img src={preview} alt="Preview" className="w-32 h-32 rounded object-cover border mb-2" />}
-                        <Input id="file" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                        <Label htmlFor="file">Imagem da Capa</Label>
+                        {imagePreview && <img src={imagePreview} alt="Preview" className="w-32 h-32 rounded object-cover border mb-2" />}
+                        <Input id="file" type="file" accept="image/*" onChange={handleFileChange} />
                     </div>
 
                     <ItemForm
