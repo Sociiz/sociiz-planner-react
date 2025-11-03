@@ -2,51 +2,43 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import api from "@/services/api";
-import { ItemForm } from "../../ItemForm";
+import { ItemForm } from "@/components/ItemForm";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import api from "@/services/api";
 
-interface Project {
+interface Client {
     _id?: string;
     name: string;
-    description?: string;
     imageUrl?: string;
 }
 
-interface ProjectModalProps {
+interface ClientModalProps {
     open: boolean;
     onClose: () => void;
 }
 
-export function ProjectModal({ open, onClose }: ProjectModalProps) {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [editingProject, setEditingProject] = useState<Project | null>(null);
+export function ClientModal({ open, onClose }: ClientModalProps) {
+    const [clients, setClients] = useState<Client[]>([]);
+    const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [loading, setLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({ open: false });
-    // const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
 
-    const fetchProjects = async () => {
-        try {
-            const res = await api.get<Project[]>("/projects");
-            console.log("📦 Projetos carregados:", res.data);
-            setProjects(res.data);
-        } catch (err) {
-            console.error("Erro ao buscar projetos:", err);
-        }
+    const fetchClients = async () => {
+        const res = await api.get<Client[]>("/clients");
+        setClients(res.data);
     };
 
     useEffect(() => {
-        if (open) fetchProjects();
+        if (open) fetchClients();
     }, [open]);
 
     const fileToBase64 = (file: File): Promise<string> =>
         new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
-                console.log("📄 Arquivo convertido para Base64:", reader.result);
                 resolve(reader.result as string);
             };
             reader.onerror = (err) => {
@@ -59,62 +51,42 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            console.log("📁 Arquivo selecionado:", file);
-            // setImageFile(file);
             setImagePreview(await fileToBase64(file));
         }
     };
 
-    const handleSubmit = async (data: { name: string; description?: string }) => {
+    const handleSubmit = async (data: { name: string }) => {
         setLoading(true);
         try {
-            // let imageUrl = editingProject?.imageUrl ?? "";
-
-            // if (imageFile) {
-            //     console.log("⏳ Iniciando upload Base64...");
-            //     const base64 = await fileToBase64(imageFile);
-            //     console.log("✅ Base64 pronto, enviando para /upload-base64...");
-            //     const res = await api.post("/upload-base64", {
-            //         name: imageFile.name,
-            //         base64,
-            //     });
-            //     console.log("📤 Resposta do backend /upload-base64:", res.data);
-            //     imageUrl = res.data.file.base64;
-            // }
-
             const payload = { ...data, coverImage: imagePreview };
-            console.log("📦 Payload final a ser enviado para /projects:", payload);
-
-            if (editingProject?._id) {
-                await api.put(`/projects/${editingProject._id}`, payload);
-                setEditingProject(null);
+            if (editingClient?._id) {
+                await api.put(`/clients/${editingClient._id}`, payload);
+                setEditingClient(null);
             } else {
-                await api.post("/projects", payload);
+                await api.post("/clients", payload);
             }
-
-            setImagePreview("");
-            fetchProjects();
+            setImagePreview("")
+            fetchClients();
         } catch (err) {
-            console.error("Erro ao salvar projeto:", err);
+            console.error("Erro ao salvar cliente:", err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleEditClick = (project: Project) => {
-        console.log("✏️ Editando projeto:", project);
-        setEditingProject(project);
-        setImagePreview(project.imageUrl || "");
+    const handleEditClick = (client: Client) => {
+        setEditingClient(client);
+        setImagePreview(client.imageUrl || "");
     };
 
     const handleDelete = async (id: string) => {
-        console.log("🗑️ Excluindo projeto com id:", id);
         try {
-            await api.delete(`/projects/${id}`);
-            fetchProjects();
-            setConfirmDelete({ open: false, id: undefined });
-        } catch (err) {
-            console.error("Erro ao excluir projeto:", err);
+            await api.delete(`/clients/${id}`);
+            fetchClients();
+            setConfirmDelete({ open: false, id: undefined })
+        } catch (error) {
+            console.error("Erro ao excluir projeto:", error);
+
         }
     };
 
@@ -123,7 +95,7 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
             <Dialog open={open} onOpenChange={onClose}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Gerenciar Projetos</DialogTitle>
+                        <DialogTitle>Gerenciar Clientes</DialogTitle>
                     </DialogHeader>
 
                     <div className="mb-4 grid gap-2">
@@ -139,38 +111,34 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
                     </div>
 
                     <ItemForm
-                        initialData={editingProject ?? undefined}
+                        initialData={editingClient ?? undefined}
                         onSubmit={handleSubmit}
                         loading={loading}
-                        submitLabel={editingProject ? "Salvar Alterações" : "Adicionar Projeto"}
+                        submitLabel={editingClient ? "Salvar Alterações" : "Adicionar Cliente"}
                     />
 
                     <ScrollArea className="mt-4 h-48">
-                        {projects.map((p) => (
+                        {clients.map((c) => (
                             <div
-                                key={p._id}
+                                key={c._id}
                                 className="flex justify-between items-center border-b py-2 text-sm text-slate-700 dark:text-slate-200"
                             >
                                 <div className="flex items-center gap-2">
-                                    {p.imageUrl && (
+                                    {c.imageUrl && (
                                         <img
-                                            src={p.imageUrl}
-                                            alt={p.name}
+                                            src={c.imageUrl}
                                             className="w-20 h-20 rounded-md border object-cover"
                                         />
                                     )}
                                     <div>
-                                        <p className="font-medium">{p.name}</p>
-                                        {p.description && (
-                                            <p className="text-xs text-slate-500">{p.description}</p>
-                                        )}
+                                        <p>{c.name}</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => handleEditClick(p)}
+                                        onClick={() => handleEditClick(c)}
                                     >
                                         Editar
                                     </Button>
@@ -178,7 +146,7 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
                                         variant="destructive"
                                         size="sm"
                                         onClick={() =>
-                                            setConfirmDelete({ open: true, id: p._id })
+                                            setConfirmDelete({ open: true, id: c._id })
                                         }
                                     >
                                         Excluir
@@ -195,7 +163,7 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
                     open={confirmDelete.open}
                     onClose={() => setConfirmDelete({ open: false })}
                     onConfirm={() => handleDelete(confirmDelete.id!)}
-                    itemName={projects.find((p) => p._id === confirmDelete.id)?.name ?? "item"}
+                    itemName={clients.find((c) => c._id === confirmDelete.id)?.name ?? "item"}
                 />
             )}
         </>
