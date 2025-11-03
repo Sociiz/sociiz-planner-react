@@ -7,6 +7,7 @@ import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/services/api";
+import { uploadService } from "@/services/uploadService";
 
 interface Client {
     _id?: string;
@@ -24,7 +25,8 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [loading, setLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({ open: false });
-    const [imagePreview, setImagePreview] = useState<string>("");
+    const [file, setFile] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
 
     const fetchClients = async () => {
         const res = await api.get<Client[]>("/clients");
@@ -35,37 +37,39 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
         if (open) fetchClients();
     }, [open]);
 
-    const fileToBase64 = (file: File): Promise<string> =>
-        new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-                resolve(reader.result as string);
-            };
-            reader.onerror = (err) => {
-                console.error("Erro ao converter arquivo para Base64:", err);
-                reject(err);
-            };
-            reader.readAsDataURL(file);
-        });
-
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setImagePreview(await fileToBase64(file));
+    // Quando muda o file, atualiza o preview
+    useEffect(() => {
+        if (!file) {
+            setPreview(null);
+            return;
         }
-    };
+        const objectUrl = URL.createObjectURL(file);
+        setPreview(objectUrl);
+
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [file]);
 
     const handleSubmit = async (data: { name: string }) => {
         setLoading(true);
         try {
-            const payload = { ...data, coverImage: imagePreview };
+            let imageUrl = editingClient?.imageUrl;
+
+            if (file) {
+                const uploaded = await uploadService.upload(file);
+                imageUrl = uploaded.url;
+            }
+
+            const payload = { ...data, imageUrl };
+
             if (editingClient?._id) {
                 await api.put(`/clients/${editingClient._id}`, payload);
                 setEditingClient(null);
             } else {
                 await api.post("/clients", payload);
             }
-            setImagePreview("")
+
+            setFile(null);
+            setPreview(null);
             fetchClients();
         } catch (err) {
             console.error("Erro ao salvar cliente:", err);
@@ -76,18 +80,12 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
 
     const handleEditClick = (client: Client) => {
         setEditingClient(client);
-        setImagePreview(client.imageUrl || "");
+        setPreview(client.imageUrl || null);
     };
 
     const handleDelete = async (id: string) => {
-        try {
-            await api.delete(`/clients/${id}`);
-            fetchClients();
-            setConfirmDelete({ open: false, id: undefined })
-        } catch (error) {
-            console.error("Erro ao excluir projeto:", error);
-
-        }
+        await api.delete(`/clients/${id}`);
+        fetchClients();
     };
 
     return (
@@ -100,14 +98,13 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
 
                     <div className="mb-4 grid gap-2">
                         <Label htmlFor="file">Imagem de capa</Label>
-                        {imagePreview && (
-                            <img
-                                src={imagePreview}
-                                alt="Preview"
-                                className="w-32 h-32 rounded object-cover border mb-2"
-                            />
-                        )}
-                        <Input type="file" accept="image/*" onChange={handleFileChange} />
+                        {preview && <img src={preview} alt="Preview" className="w-32 h-32 rounded object-cover border mb-2" />}
+                        <Input
+                            id="file"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setFile(e.target.files?.[0] || null)}
+                        />
                     </div>
 
                     <ItemForm
@@ -119,38 +116,14 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
 
                     <ScrollArea className="mt-4 h-48">
                         {clients.map((c) => (
-                            <div
-                                key={c._id}
-                                className="flex justify-between items-center border-b py-2 text-sm text-slate-700 dark:text-slate-200"
-                            >
-                                <div className="flex items-center gap-2">
-                                    {c.imageUrl && (
-                                        <img
-                                            src={c.imageUrl}
-                                            className="w-20 h-20 rounded-md border object-cover"
-                                        />
-                                    )}
-                                    <div>
-                                        <p>{c.name}</p>
-                                    </div>
+                            <div key={c._id} className="flex justify-between items-center border-b py-2 text-sm text-slate-700 dark:text-slate-200">
+                                <div className="flex items-center gap-3">
+                                    {c.imageUrl && <img src={c.imageUrl} alt={c.name} className="w-10 h-10 rounded object-cover border" />}
+                                    <span>{c.name}</span>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEditClick(c)}
-                                    >
-                                        Editar
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() =>
-                                            setConfirmDelete({ open: true, id: c._id })
-                                        }
-                                    >
-                                        Excluir
-                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleEditClick(c)}>Editar</Button>
+                                    <Button variant="destructive" size="sm" onClick={() => setConfirmDelete({ open: true, id: c._id })}>Excluir</Button>
                                 </div>
                             </div>
                         ))}

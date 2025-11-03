@@ -191,8 +191,14 @@ export default function PlannerApp() {
             const response = await fetch(`${API_BASE_URL}/tasks/${confirmDeleteTask._id}`, {
                 method: "DELETE",
                 headers: {
+<<<<<<< HEAD
                     Authorization: `Bearer ${token}`,
                 },
+=======
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+>>>>>>> parent of e710b78 ((fix) - Resolvido problema de tarefa não estar sendo deletada.)
             });
 
             if (!response.ok) throw new Error("Erro ao deletar task");

@@ -25,11 +25,13 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({ open: false });
+    // const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
 
     const fetchProjects = async () => {
         try {
             const res = await api.get<Project[]>("/projects");
+            console.log("📦 Projetos carregados:", res.data);
             setProjects(res.data);
         } catch (err) {
             console.error("Erro ao buscar projetos:", err);
@@ -44,6 +46,7 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
         new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
+                console.log("📄 Arquivo convertido para Base64:", reader.result);
                 resolve(reader.result as string);
             };
             reader.onerror = (err) => {
@@ -56,6 +59,8 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+            console.log("📁 Arquivo selecionado:", file);
+            // setImageFile(file);
             setImagePreview(await fileToBase64(file));
         }
     };
@@ -63,7 +68,23 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
     const handleSubmit = async (data: { name: string; description?: string }) => {
         setLoading(true);
         try {
+            // let imageUrl = editingProject?.imageUrl ?? "";
+
+            // if (imageFile) {
+            //     console.log("⏳ Iniciando upload Base64...");
+            //     const base64 = await fileToBase64(imageFile);
+            //     console.log("✅ Base64 pronto, enviando para /upload-base64...");
+            //     const res = await api.post("/upload-base64", {
+            //         name: imageFile.name,
+            //         base64,
+            //     });
+            //     console.log("📤 Resposta do backend /upload-base64:", res.data);
+            //     imageUrl = res.data.file.base64;
+            // }
+
             const payload = { ...data, coverImage: imagePreview };
+            console.log("📦 Payload final a ser enviado para /projects:", payload);
+
             if (editingProject?._id) {
                 await api.put(`/projects/${editingProject._id}`, payload);
                 setEditingProject(null);
@@ -81,11 +102,13 @@ export function ProjectModal({ open, onClose }: ProjectModalProps) {
     };
 
     const handleEditClick = (project: Project) => {
+        console.log("✏️ Editando projeto:", project);
         setEditingProject(project);
         setImagePreview(project.imageUrl || "");
     };
 
     const handleDelete = async (id: string) => {
+        console.log("🗑️ Excluindo projeto com id:", id);
         try {
             await api.delete(`/projects/${id}`);
             fetchProjects();
