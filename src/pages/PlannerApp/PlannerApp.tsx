@@ -46,7 +46,7 @@ export default function PlannerApp() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const { theme, setTheme } = useTheme();
-    const { logout, token } = useAuth();
+    const { logout, token, user } = useAuth();
     const navigate = useNavigate();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -54,6 +54,29 @@ export default function PlannerApp() {
         setEditingTask(task ?? null);
         setIsDialogOpen(true);
     };
+
+    const filterColaborador = async () => {
+        try {
+            if (!user) return;
+            if (user.isAdmin) {
+                setFilteredTasks(tasks);
+                return;
+            }
+            // Usuário comum: mostra apenas as tasks atribuídas a ele
+            const minhasTasks = tasks.filter(
+                (t) =>
+                    Array.isArray(t.assignedTo) && t.assignedTo.includes(user.id)
+            );
+
+            setFilteredTasks(minhasTasks);
+        } catch (error) {
+            console.error("Erro ao filtrar tarefas por colaborador:", error);
+        }
+    };
+
+    useEffect(() => {
+        filterColaborador();
+    }, [tasks, user]);
 
     const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 

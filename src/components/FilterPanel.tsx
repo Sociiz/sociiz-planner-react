@@ -2,6 +2,7 @@ import { type Filters, type FilterOption } from "@/types/types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
+import { useAuth } from "@/context/authContext";
 
 interface FilterPanelProps {
     filters: Filters;
@@ -24,6 +25,9 @@ export function FilterPanel({
     tagsOptions,
     prioritiesOptions,
 }: FilterPanelProps) {
+
+    const { user } = useAuth();
+
     const handleMultiSelectChange = (key: keyof Filters, values: string[]) => {
         setFilters({ ...filters, [key]: values });
     };
@@ -119,32 +123,34 @@ export function FilterPanel({
                 )}
             </div>
 
-            {/* Atribuído a */}
-            <div className="relative">
-                <Select
-                    value={filters.assignedTo[0] || ""}
-                    onValueChange={(val) => handleMultiSelectChange("assignedTo", val ? [val] : [])}
-                >
-                    <SelectTrigger className="w-36">
-                        <SelectValue placeholder="Atribuído a" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {assignedToOptions.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                                {c.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                {filters.assignedTo.length > 0 && (
-                    <button
-                        onClick={() => clearFilter("assignedTo")}
-                        className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-red-400 rounded"
+            {/* Filtro de atribuido so aparece se for um admin, se não some  */}
+            {user?.isAdmin && (
+                <div className="relative">
+                    <Select
+                        value={filters.assignedTo[0] || ""}
+                        onValueChange={(val) => handleMultiSelectChange("assignedTo", val ? [val] : [])}
                     >
-                        <X className="h-3.5 w-3.5" />
-                    </button>
-                )}
-            </div>
+                        <SelectTrigger className="w-36">
+                            <SelectValue placeholder="Atribuído a" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {assignedToOptions.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                    {c.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {filters.assignedTo.length > 0 && (
+                        <button
+                            onClick={() => clearFilter("assignedTo")}
+                            className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-red-400 rounded"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* Tags */}
             <div className="relative">

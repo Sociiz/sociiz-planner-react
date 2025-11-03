@@ -37,9 +37,17 @@ export function PlannerKanban({
     onRequestDelete,
     viewMode,
 }: PlannerKanbanProps) {
+    const { token, user } = useAuth();
     const [statusList, setStatusList] = useState<IStatus[]>([]);
-    const { token } = useAuth();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    const filteredTasks = React.useMemo(() => {
+        if (!user) return tasks;
+        if (user.isAdmin) return tasks;
+        return tasks.filter(
+            (t) => Array.isArray(t.assignedTo) && t.assignedTo.includes(user.id)
+        );
+    }, [tasks, user]);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -51,13 +59,11 @@ export function PlannerKanban({
             try {
                 const res = await fetch(`${API_BASE_URL}/status`, {
                     headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    }
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
                 });
-
                 if (!res.ok) throw new Error("Erro ao carregar status");
-
                 const data = await res.json();
                 setStatusList(data);
             } catch (err) {
@@ -72,15 +78,14 @@ export function PlannerKanban({
     }, [viewMode]);
 
     const getTasksByStatus = (statusId: string) =>
-        tasks.filter((t) => t.status === statusId);
+        filteredTasks.filter((t) => t.status === statusId);
 
     const getTasksByColaborador = (colabId: string) =>
-        tasks.filter((t) => {
+        filteredTasks.filter((t) => {
             if (!t.assignedTo) return false;
-            if (Array.isArray(t.assignedTo)) {
-                return t.assignedTo.some((a) => a === colabId);
-            }
-            return t.assignedTo === colabId;
+            return Array.isArray(t.assignedTo)
+                ? t.assignedTo.includes(colabId)
+                : t.assignedTo === colabId;
         });
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -88,8 +93,9 @@ export function PlannerKanban({
     };
 
     const handleDragEnd = async (event: DragEndEvent) => {
-        setActiveId(null);
         const { active, over } = event;
+        setActiveId(null);
+
         if (!over) return;
 
         const activeTask = tasks.find((t) => t._id === active.id);
@@ -106,8 +112,8 @@ export function PlannerKanban({
                     viewMode === "status"
                         ? overTask.status
                         : Array.isArray(overTask.assignedTo)
-                            ? (overTask.assignedTo[0] ?? overTask.assignedTo[0])
-                            : overTask.assignedTo ?? overTask.assignedTo ?? null;
+                            ? overTask.assignedTo[0]
+                            : overTask.assignedTo;
             }
         }
 
@@ -117,7 +123,7 @@ export function PlannerKanban({
             viewMode === "status"
                 ? activeTask.status === newField
                 : Array.isArray(activeTask.assignedTo)
-                    ? activeTask.assignedTo.some((a) => a === newField)
+                    ? activeTask.assignedTo.includes(newField)
                     : activeTask.assignedTo === newField;
 
         if (isSameField) return;
@@ -132,14 +138,18 @@ export function PlannerKanban({
         );
 
         try {
-            await fetch(`${API_BASE_URL}/tasks/${activeTask._id}`, {
+            const res = await fetch(`${API_BASE_URL}/tasks/${activeTask._id}`, {
                 method: "PUT",
                 headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(updatedTask)
+                body: JSON.stringify(updatedTask),
             });
+
+            if (!res.ok) {
+                console.error("Erro ao atualizar a task no servidor:", await res.text());
+            }
         } catch (err) {
             console.error("Erro ao atualizar task:", err);
         }
@@ -148,7 +158,7 @@ export function PlannerKanban({
     const activeTask = activeId ? tasks.find((t) => t._id === activeId) : null;
 
     return (
-        <div className="container mx-auto px-6 py-8">
+        <div className="container mx-auto px-4 py-6">
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}
@@ -160,7 +170,7 @@ export function PlannerKanban({
                         ? statusList.map((status) => (
                             <Column
                                 key={status._id}
-                                id={status._id}
+                                id={`column-${status._id}`}
                                 title={status.name}
                                 color={status.color ?? "bg-gray-200"}
                                 tasks={getTasksByStatus(status._id)}
@@ -174,7 +184,7 @@ export function PlannerKanban({
                             .map((colab) => (
                                 <Column
                                     key={colab._id}
-                                    id={colab._id}
+                                    id={`column-${colab._id}`}
                                     title={colab.name}
                                     color="bg-green-200"
                                     tasks={getTasksByColaborador(colab._id)}
