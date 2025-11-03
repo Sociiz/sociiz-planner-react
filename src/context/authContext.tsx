@@ -19,14 +19,12 @@ interface User {
     id: string;
     email?: string;
     isAdmin?: boolean;
-    isColaborador?: boolean;
 }
 
 interface JwtPayload {
     id: string;
     email?: string;
     isAdmin?: boolean;
-    isColaborador?: boolean;
     exp: number;
     iat: number;
 }
@@ -62,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 id: decoded.id,
                 email: decoded.email,
                 isAdmin: decoded.isAdmin ?? false,
-                isColaborador: decoded.isColaborador ?? false,
             };
         } catch {
             clearTokens();
@@ -121,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 id: decoded.id,
                 email: decoded.email,
                 isAdmin: decoded.isAdmin ?? false,
-                isColaborador: decoded.isColaborador ?? false,
             });
             setIsModalOpen(false);
 
@@ -153,8 +149,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: decoded.id,
             email: decoded.email,
             isAdmin: decoded.isAdmin ?? false,
-            isColaborador: decoded.isColaborador ?? false,
-
         });
     }
 
@@ -178,7 +172,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: decoded.id,
             email: decoded.email,
             isAdmin: decoded.isAdmin ?? false,
-            isColaborador: decoded.isColaborador ?? false,
         });
     }
 

@@ -46,7 +46,7 @@ export default function PlannerApp() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const { theme, setTheme } = useTheme();
-    const { logout, token, user } = useAuth();
+    const { logout, token } = useAuth();
     const navigate = useNavigate();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
