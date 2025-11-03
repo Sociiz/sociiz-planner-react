@@ -57,119 +57,13 @@ export default function PlannerApp() {
 
     const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
-    // 🔹 Buscar tasks e colaboradores
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!token) return;
-
-            try {
-                const [tasksRes, colaboradoresRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/tasks`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json",
-                        },
-                    }),
-                    fetch(`${API_BASE_URL}/colaboradores`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json",
-                        },
-                    }),
-                ]);
-
-                if (!tasksRes.ok || !colaboradoresRes.ok) throw new Error("Erro ao buscar dados");
-
-                const [tasksData, colaboradoresData] = await Promise.all([
-                    tasksRes.json(),
-                    colaboradoresRes.json(),
-                ]);
-
-                setTasks(tasksData);
-                setColaboradores(colaboradoresData);
-            } catch (err) {
-                console.error("Erro ao carregar dados:", err);
-            }
-        };
-
-        fetchData();
-    }, [token, API_BASE_URL]);
-
-    // 🔹 Salvar modo de visualização
-    useEffect(() => {
-        localStorage.setItem("kanbanViewMode", viewMode);
-    }, [viewMode]);
-
-    // 🔹 Filtragem principal (inclui admin/colaborador)
-    useEffect(() => {
-        if (!user) return;
-
-        let filtered = [...tasks];
-
-        // Se não for admin, mostra só tasks atribuídas a ele
-        if (!user.isAdmin) {
-            filtered = filtered.filter(
-                (t) => Array.isArray(t.assignedTo) && t.assignedTo.includes(user.id)
-            );
-        }
-
-        if (filters.clients.length) {
-            filtered = filtered.filter(
-                (t) => Array.isArray(t.client) && t.client.some((c) => filters.clients.includes(c))
-            );
-        }
-
-        if (filters.projects.length) {
-            filtered = filtered.filter(
-                (t) => Array.isArray(t.project) && t.project.some((p) => filters.projects.includes(p))
-            );
-        }
-
-        if (filters.products.length) {
-            filtered = filtered.filter(
-                (t) => Array.isArray(t.product) && t.product.some((p) => filters.products.includes(p))
-            );
-        }
-
-        if (filters.assignedTo.length) {
-            filtered = filtered.filter(
-                (t) =>
-                    Array.isArray(t.assignedTo) &&
-                    t.assignedTo.some((a) => filters.assignedTo.includes(a))
-            );
-        }
-
-        if (filters.tags.length) {
-            filtered = filtered.filter(
-                (t) => Array.isArray(t.tags) && t.tags.some((tag) => filters.tags.includes(tag))
-            );
-        }
-
-        if (filters.priorities.length) {
-            filtered = filtered.filter(
-                (t) => t.priority && filters.priorities.includes(t.priority)
-            );
-        }
-
-        if (filters.dueDate) {
-            filtered = filtered.filter(
-                (t) =>
-                    t.dueDate &&
-                    new Date(t.dueDate).toDateString() ===
-                    new Date(filters.dueDate!).toDateString()
-            );
-        }
-
-        setFilteredTasks(filtered);
-    }, [tasks, filters, user]);
-
     const refreshTasks = async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/tasks`, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
             });
 
             if (!response.ok) throw new Error("Erro ao buscar tasks");
@@ -191,8 +85,9 @@ export default function PlannerApp() {
             const response = await fetch(`${API_BASE_URL}/tasks/${confirmDeleteTask._id}`, {
                 method: "DELETE",
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                    "Authorization": `Bearer ${token}`,
+
+                }
             });
 
             if (!response.ok) throw new Error("Erro ao deletar task");
@@ -205,28 +100,104 @@ export default function PlannerApp() {
         }
     };
 
+    const handleCancelDelete = () => setConfirmDeleteTask(null);
+
+    useEffect(() => {
+        const fetchColaboradores = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/colaboradores`, {
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!response.ok) throw new Error("Erro ao buscar colaboradores");
+
+                const data = await response.json();
+                setColaboradores(data);
+            } catch (err) {
+                console.error("Erro ao buscar colaboradores:", err);
+            }
+        };
+
+        refreshTasks();
+        fetchColaboradores();
+    }, [token, API_BASE_URL]);
+
+    useEffect(() => {
+        localStorage.setItem("kanbanViewMode", viewMode);
+    }, [viewMode]);
+
+    useEffect(() => {
+        let filtered = [...tasks];
+
+        if (filters.clients.length)
+            filtered = filtered.filter(
+                (t) => Array.isArray(t.client) && t.client.some((c) => filters.clients.includes(c))
+            );
+
+        if (filters.projects.length)
+            filtered = filtered.filter(
+                (t) => Array.isArray(t.project) && t.project.some((p) => filters.projects.includes(p))
+            );
+
+        if (filters.products.length)
+            filtered = filtered.filter(
+                (t) => Array.isArray(t.product) && t.product.some((p) => filters.products.includes(p))
+            );
+
+        if (filters.assignedTo.length)
+            filtered = filtered.filter(
+                (t) => Array.isArray(t.assignedTo) && t.assignedTo.some((a) => filters.assignedTo.includes(a))
+            );
+
+        if (filters.tags.length)
+            filtered = filtered.filter(
+                (t) => Array.isArray(t.tags) && t.tags.some((tag) => filters.tags.includes(tag))
+            );
+
+        if (filters.priorities.length)
+            filtered = filtered.filter((t) => t.priority && filters.priorities.includes(t.priority));
+
+        if (filters.dueDate)
+            filtered = filtered.filter(
+                (t) =>
+                    t.dueDate &&
+                    new Date(t.dueDate).toDateString() === new Date(filters.dueDate!).toDateString()
+            );
+
+        setFilteredTasks(filtered);
+    }, [tasks, filters]);
+
     const handleSubmit = async (task: Task) => {
         try {
-            const validSubtasks = (task.subtasks || []).filter(
-                (s) => s.title?.trim() !== ""
-            );
+            const validSubtasks = (task.subtasks || []).filter((s) => s.title?.trim() !== "");
             const payload = { ...task, subtasks: validSubtasks };
 
-            const method = editingTask ? "PUT" : "POST";
-            const url = editingTask
-                ? `${API_BASE_URL}/tasks/${task._id}`
-                : `${API_BASE_URL}/tasks`;
+            if (editingTask) {
+                const response = await fetch(`${API_BASE_URL}/tasks/${task._id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-            });
+                if (!response.ok) throw new Error("Erro ao atualizar task");
+            } else {
+                const response = await fetch(`${API_BASE_URL}/tasks`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-            if (!response.ok) throw new Error("Erro ao salvar task");
+                if (!response.ok) throw new Error("Erro ao criar task");
+            }
 
             setIsDialogOpen(false);
             setEditingTask(null);
@@ -237,27 +208,30 @@ export default function PlannerApp() {
     };
 
     const handleThemeChange = (newTheme: string) => {
-        if (["light", "dark", "system"].includes(newTheme))
-            setTheme(newTheme as Theme);
+        if (["light", "dark", "system"].includes(newTheme)) setTheme(newTheme as Theme);
     };
 
     const getUniqueValues = (tasks: Task[], key: keyof Task): string[] => {
         const values = tasks.flatMap((t) => {
             const value = t[key];
+
             if (!value) return [];
+
             if (Array.isArray(value)) {
                 return value.filter((v): v is string => typeof v === "string");
             }
-            if (typeof value === "string") return [value];
+
+            if (typeof value === "string") {
+                return [value];
+            }
+
             return [];
         });
+
         return Array.from(new Set(values));
     };
 
-    const assignedToOptions: FilterOption[] = colaboradores.map((u) => ({
-        id: u._id,
-        label: u.name,
-    }));
+    const assignedToOptions: FilterOption[] = colaboradores.map((u) => ({ id: u._id, label: u.name }));
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
@@ -266,10 +240,7 @@ export default function PlannerApp() {
                     theme={theme}
                     setTheme={handleThemeChange}
                     onNewTask={() => openDialog(null)}
-                    onLogout={() => {
-                        logout();
-                        navigate("/login");
-                    }}
+                    onLogout={() => { logout(); navigate("/login"); }}
                     filters={filters}
                     setFilters={setFilters}
                     clientsOptions={getUniqueValues(tasks, "client")}
@@ -303,27 +274,25 @@ export default function PlannerApp() {
                     colaboradores={colaboradores}
                 />
 
-                <Dialog open={!!confirmDeleteTask} onOpenChange={() => setConfirmDeleteTask(null)}>
+                <Dialog open={!!confirmDeleteTask} onOpenChange={handleCancelDelete}>
                     <DialogContent className="sm:max-w-[400px]">
                         <DialogHeader>
                             <DialogTitle>Confirmar exclusão</DialogTitle>
                         </DialogHeader>
                         <p>Tem certeza que deseja excluir a task "{confirmDeleteTask?.title}"?</p>
                         <div className="mt-4 flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setConfirmDeleteTask(null)}>
-                                Cancelar
-                            </Button>
-                            <Button variant="destructive" onClick={handleConfirmDelete}>
-                                Excluir
-                            </Button>
+                            <Button variant="outline" onClick={handleCancelDelete}>Cancelar</Button>
+                            <Button variant="destructive" onClick={handleConfirmDelete}>Excluir</Button>
                         </div>
                     </DialogContent>
                 </Dialog>
             </div>
 
             {isSidebarOpen && (
-                <PostItSidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
+                <PostItSidebar
+                    isOpen={isSidebarOpen}
+                    onToggle={toggleSidebar}
+                />
             )}
         </div>
     );
-}

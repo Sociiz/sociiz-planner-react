@@ -2,43 +2,51 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ItemForm } from "@/components/ItemForm";
-import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import api from "@/services/api";
+import { ItemForm } from "../../ItemForm";
+import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
-interface Client {
+interface Project {
     _id?: string;
     name: string;
+    description?: string;
     imageUrl?: string;
 }
 
-interface ClientModalProps {
+interface ProjectModalProps {
     open: boolean;
     onClose: () => void;
 }
 
-export function ClientModal({ open, onClose }: ClientModalProps) {
-    const [clients, setClients] = useState<Client[]>([]);
-    const [editingClient, setEditingClient] = useState<Client | null>(null);
+export function ProjectModal({ open, onClose }: ProjectModalProps) {
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({ open: false });
+
     const [imagePreview, setImagePreview] = useState<string>("");
 
-    const fetchClients = async () => {
-        const res = await api.get<Client[]>("/clients");
-        setClients(res.data);
+    const fetchProjects = async () => {
+        try {
+            const res = await api.get<Project[]>("/projects");
+
+            setProjects(res.data);
+        } catch (err) {
+            console.error("Erro ao buscar projetos:", err);
+        }
     };
 
     useEffect(() => {
-        if (open) fetchClients();
+        if (open) fetchProjects();
     }, [open]);
 
     const fileToBase64 = (file: File): Promise<string> =>
         new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
+
                 resolve(reader.result as string);
             };
             reader.onerror = (err) => {
@@ -51,42 +59,62 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+
+
             setImagePreview(await fileToBase64(file));
         }
     };
 
-    const handleSubmit = async (data: { name: string }) => {
+    const handleSubmit = async (data: { name: string; description?: string }) => {
         setLoading(true);
         try {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             const payload = { ...data, coverImage: imagePreview };
-            if (editingClient?._id) {
-                await api.put(`/clients/${editingClient._id}`, payload);
-                setEditingClient(null);
+
+
+            if (editingProject?._id) {
+                await api.put(`/projects/${editingProject._id}`, payload);
+                setEditingProject(null);
             } else {
-                await api.post("/clients", payload);
+                await api.post("/projects", payload);
             }
-            setImagePreview("")
-            fetchClients();
+
+            setImagePreview("");
+            fetchProjects();
         } catch (err) {
-            console.error("Erro ao salvar cliente:", err);
+            console.error("Erro ao salvar projeto:", err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleEditClick = (client: Client) => {
-        setEditingClient(client);
-        setImagePreview(client.imageUrl || "");
+    const handleEditClick = (project: Project) => {
+
+        setEditingProject(project);
+        setImagePreview(project.imageUrl || "");
     };
 
     const handleDelete = async (id: string) => {
-        try {
-            await api.delete(`/clients/${id}`);
-            fetchClients();
-            setConfirmDelete({ open: false, id: undefined })
-        } catch (error) {
-            console.error("Erro ao excluir projeto:", error);
 
+        try {
+            await api.delete(`/projects/${id}`);
+            fetchProjects();
+            setConfirmDelete({ open: false, id: undefined });
+        } catch (err) {
+            console.error("Erro ao excluir projeto:", err);
         }
     };
 
@@ -95,7 +123,7 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
             <Dialog open={open} onOpenChange={onClose}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Gerenciar Clientes</DialogTitle>
+                        <DialogTitle>Gerenciar Projetos</DialogTitle>
                     </DialogHeader>
 
                     <div className="mb-4 grid gap-2">
@@ -111,34 +139,38 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
                     </div>
 
                     <ItemForm
-                        initialData={editingClient ?? undefined}
+                        initialData={editingProject ?? undefined}
                         onSubmit={handleSubmit}
                         loading={loading}
-                        submitLabel={editingClient ? "Salvar Alterações" : "Adicionar Cliente"}
+                        submitLabel={editingProject ? "Salvar Alterações" : "Adicionar Projeto"}
                     />
 
                     <ScrollArea className="mt-4 h-48">
-                        {clients.map((c) => (
+                        {projects.map((p) => (
                             <div
-                                key={c._id}
+                                key={p._id}
                                 className="flex justify-between items-center border-b py-2 text-sm text-slate-700 dark:text-slate-200"
                             >
                                 <div className="flex items-center gap-2">
-                                    {c.imageUrl && (
+                                    {p.imageUrl && (
                                         <img
-                                            src={c.imageUrl}
+                                            src={p.imageUrl}
+                                            alt={p.name}
                                             className="w-20 h-20 rounded-md border object-cover"
                                         />
                                     )}
                                     <div>
-                                        <p>{c.name}</p>
+                                        <p className="font-medium">{p.name}</p>
+                                        {p.description && (
+                                            <p className="text-xs text-slate-500">{p.description}</p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => handleEditClick(c)}
+                                        onClick={() => handleEditClick(p)}
                                     >
                                         Editar
                                     </Button>
@@ -146,7 +178,7 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
                                         variant="destructive"
                                         size="sm"
                                         onClick={() =>
-                                            setConfirmDelete({ open: true, id: c._id })
+                                            setConfirmDelete({ open: true, id: p._id })
                                         }
                                     >
                                         Excluir
@@ -163,7 +195,7 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
                     open={confirmDelete.open}
                     onClose={() => setConfirmDelete({ open: false })}
                     onConfirm={() => handleDelete(confirmDelete.id!)}
-                    itemName={clients.find((c) => c._id === confirmDelete.id)?.name ?? "item"}
+                    itemName={projects.find((p) => p._id === confirmDelete.id)?.name ?? "item"}
                 />
             )}
         </>

@@ -8,6 +8,7 @@ import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+
 interface Product {
     _id?: string;
     name: string;
@@ -25,6 +26,7 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
     const [loading, setLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({ open: false });
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+
 
     const fetchProducts = async () => {
         try {
@@ -59,10 +61,21 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
         }
     };
 
+
+
+
     const handleSubmit = async (data: { name: string }) => {
         setLoading(true);
         try {
             const payload = { ...data, coverImage: imagePreview };
+
+
+
+
+
+
+
+
 
             if (editingProduct?._id) {
                 await api.put(`/products/${editingProduct._id}`, payload);
@@ -71,6 +84,8 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
                 await api.post("/products", payload);
             }
             setImagePreview("")
+
+
             fetchProducts();
         } catch (err) {
             console.error("Erro ao salvar produto:", err);
@@ -87,6 +102,11 @@ export function ProductModal({ open, onClose }: ProductModalProps) {
     const handleDelete = async (id: string) => {
         await api.delete(`/products/${id}`);
         fetchProducts();
+
+
+
+
+
     };
 
     return (

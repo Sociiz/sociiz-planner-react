@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/services/api";
 
+
 interface Client {
     _id?: string;
     name: string;
@@ -25,6 +26,7 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
     const [loading, setLoading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({ open: false });
     const [imagePreview, setImagePreview] = useState<string>("");
+
 
     const fetchClients = async () => {
         const res = await api.get<Client[]>("/clients");
@@ -55,10 +57,22 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
         }
     };
 
+
+
+
+
     const handleSubmit = async (data: { name: string }) => {
         setLoading(true);
         try {
             const payload = { ...data, coverImage: imagePreview };
+
+
+
+
+
+
+
+
             if (editingClient?._id) {
                 await api.put(`/clients/${editingClient._id}`, payload);
                 setEditingClient(null);
@@ -66,6 +80,8 @@ export function ClientModal({ open, onClose }: ClientModalProps) {
                 await api.post("/clients", payload);
             }
             setImagePreview("")
+
+
             fetchClients();
         } catch (err) {
             console.error("Erro ao salvar cliente:", err);
