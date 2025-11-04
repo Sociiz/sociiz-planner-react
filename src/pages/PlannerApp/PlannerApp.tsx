@@ -46,7 +46,7 @@ export default function PlannerApp() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const { theme, setTheme } = useTheme();
-    const { logout, token } = useAuth();
+    const { logout, token, user } = useAuth();
     const navigate = useNavigate();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -69,7 +69,17 @@ export default function PlannerApp() {
             if (!response.ok) throw new Error("Erro ao buscar tasks");
 
             const data = await response.json();
-            setTasks(data);
+
+            const filterData = user?.isAdmin || user?.isColaborador
+                ? data
+                : data.filter((task: Task) => {
+                    if (!task.assignedTo || !user?.id) return false;
+                    if (Array.isArray(task.assignedTo)) {
+                        return task.assignedTo.includes(user.id);
+                    }
+                    return task.assignedTo === user.id;
+                });
+            setTasks(filterData);
         } catch (err) {
             console.error("Erro ao buscar tasks:", err);
         }
@@ -251,6 +261,7 @@ export default function PlannerApp() {
                     prioritiesOptions={["Baixa", "Média", "Alta", "Urgente"]}
                     viewMode={viewMode}
                     setViewMode={setViewMode}
+                    isAdmin={user?.isAdmin || user?.isColaborador || false}
                 />
 
                 <main className="flex-1 overflow-y-auto p-4">

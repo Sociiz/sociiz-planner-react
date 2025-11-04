@@ -19,6 +19,7 @@ interface PlannerHeaderProps {
     viewMode: "status" | "usuarios";
     setViewMode: (mode: "status" | "usuarios") => void;
     onToggleSidebar?: () => void;
+    isAdmin?: boolean; // ADICIONE ESTA LINHA AQUI NA INTERFACE
 }
 
 export function PlannerHeader({
@@ -37,6 +38,7 @@ export function PlannerHeader({
     viewMode,
     setViewMode,
     onToggleSidebar,
+    isAdmin = false, // E AQUI NA DESESTRUTURAÇÃO COM VALOR PADRÃO
 }: PlannerHeaderProps) {
     const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
@@ -114,6 +116,7 @@ export function PlannerHeader({
                     assignedToOptions={assignedToOptions}
                     tagsOptions={tagsOptions}
                     prioritiesOptions={prioritiesOptions}
+                    isAdmin={isAdmin}
                 />
             </div>
         </div>

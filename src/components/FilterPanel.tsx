@@ -12,6 +12,7 @@ interface FilterPanelProps {
     assignedToOptions: FilterOption[];
     tagsOptions: string[];
     prioritiesOptions: string[];
+    isAdmin?: boolean;
 }
 
 export function FilterPanel({
@@ -23,6 +24,7 @@ export function FilterPanel({
     assignedToOptions = [],
     tagsOptions,
     prioritiesOptions,
+    isAdmin = false,
 }: FilterPanelProps) {
     const handleMultiSelectChange = (key: keyof Filters, values: string[]) => {
         setFilters({ ...filters, [key]: values });
@@ -120,32 +122,33 @@ export function FilterPanel({
             </div>
 
             {/* Atribuído a */}
-            <div className="relative">
-                <Select
-                    value={filters.assignedTo[0] || ""}
-                    onValueChange={(val) => handleMultiSelectChange("assignedTo", val ? [val] : [])}
-                >
-                    <SelectTrigger className="w-36">
-                        <SelectValue placeholder="Atribuído a" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {assignedToOptions.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                                {c.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                {filters.assignedTo.length > 0 && (
-                    <button
-                        onClick={() => clearFilter("assignedTo")}
-                        className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-red-400 rounded"
+            {isAdmin && (
+                <div className="relative">
+                    <Select
+                        value={filters.assignedTo[0] || ""}
+                        onValueChange={(val) => handleMultiSelectChange("assignedTo", val ? [val] : [])}
                     >
-                        <X className="h-3.5 w-3.5" />
-                    </button>
-                )}
-            </div>
-
+                        <SelectTrigger className="w-36">
+                            <SelectValue placeholder="Atribuído a" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {assignedToOptions.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                    {c.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {filters.assignedTo.length > 0 && (
+                        <button
+                            onClick={() => clearFilter("assignedTo")}
+                            className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-red-400 rounded"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
+            )}
             {/* Tags */}
             <div className="relative">
                 <Select
