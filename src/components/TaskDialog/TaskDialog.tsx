@@ -652,77 +652,79 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                         </div>
                                     ) : (
                                         <>
-                                            {comments.map((comment: IComment) => (
-                                                <div
-                                                    key={comment._id}
-                                                    className={`p-3 rounded-lg ${comment.userId._id === user?.id
-                                                        ? 'bg-blue-50 dark:bg-blue-900/20 ml-4'
-                                                        : 'bg-white dark:bg-gray-800 mr-4'
-                                                        }`}
-                                                >
-                                                    <div className="flex items-start justify-between mb-1">
-                                                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                                            {comment.userId.name}
-                                                        </span>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                                {formatCommentDate(comment.createdAt)}
+                                            {comments
+                                                .filter((comment: IComment) => comment?.userId)
+                                                .map((comment: IComment) => (
+                                                    <div
+                                                        key={comment._id}
+                                                        className={`p-3 rounded-lg ${comment?.userId?._id === user?.id
+                                                            ? 'bg-blue-50 dark:bg-blue-900/20 ml-4'
+                                                            : 'bg-white dark:bg-gray-800 mr-4'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-start justify-between mb-1">
+                                                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                                                {comment.userId?.username || "Usuário removido"}
                                                             </span>
-                                                            {/* So edita o proprio comentario */}
-                                                            {comment.userId._id === user?.id && editingCommentId !== comment._id && (
-                                                                <button
-                                                                    onClick={() => handleStartEdit(comment)}
-                                                                    className="text-gray-400 hover:text-blue-600 transition-colors"
-                                                                >
-                                                                    <Pencil className="h-3 w-3" />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Editando */}
-                                                    {editingCommentId === comment._id ? (
-                                                        <div className="space-y-2">
-                                                            <Input
-                                                                value={editingContent}
-                                                                onChange={(e) => setEditingContent(e.target.value)}
-                                                                className="text-sm"
-                                                                autoFocus
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === "Enter" && !e.shiftKey) {
-                                                                        e.preventDefault();
-                                                                        handleSaveEdit(comment._id);
-                                                                    }
-                                                                    if (e.key === "Escape") {
-                                                                        handleCancelEdit();
-                                                                    }
-                                                                }}
-                                                            />
-                                                            <div className="flex gap-2">
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => handleSaveEdit(comment._id)}
-                                                                    disabled={!editingContent.trim()}
-                                                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                                                >
-                                                                    <Check className="h-3 w-3 mr-1" /> Salvar
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    onClick={handleCancelEdit}
-                                                                >
-                                                                    <X className="h-3 w-3 mr-1" /> Cancelar
-                                                                </Button>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                                    {formatCommentDate(comment.createdAt)}
+                                                                </span>
+                                                                {/* So edita o proprio comentario */}
+                                                                {comment.userId._id === user?.id && editingCommentId !== comment._id && (
+                                                                    <button
+                                                                        onClick={() => handleStartEdit(comment)}
+                                                                        className="text-gray-400 hover:text-blue-600 transition-colors"
+                                                                    >
+                                                                        <Pencil className="h-3 w-3" />
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         </div>
-                                                    ) : (
-                                                        <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                                                            {comment.content}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            ))}
+
+                                                        {/* Editando */}
+                                                        {editingCommentId === comment._id ? (
+                                                            <div className="space-y-2">
+                                                                <Input
+                                                                    value={editingContent}
+                                                                    onChange={(e) => setEditingContent(e.target.value)}
+                                                                    className="text-sm"
+                                                                    autoFocus
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === "Enter" && !e.shiftKey) {
+                                                                            e.preventDefault();
+                                                                            handleSaveEdit(comment._id);
+                                                                        }
+                                                                        if (e.key === "Escape") {
+                                                                            handleCancelEdit();
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleSaveEdit(comment._id)}
+                                                                        disabled={!editingContent.trim()}
+                                                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                                                    >
+                                                                        <Check className="h-3 w-3 mr-1" /> Salvar
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        onClick={handleCancelEdit}
+                                                                    >
+                                                                        <X className="h-3 w-3 mr-1" /> Cancelar
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                                                {comment.content}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
                                             <div ref={commentsEndRef} />
                                         </>
                                     )}
