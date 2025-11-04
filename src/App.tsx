@@ -8,6 +8,7 @@ import Login from "@/pages/Login/Login";
 import RegisterPage from "@/pages/Register/Register";
 import PlannerApp from "./pages/PlannerApp/PlannerApp";
 import { AppLayout } from "./components/AppLayout";
+import { ResetSenha } from "./pages/ResetSenha/ResetSenha";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             {/* Rotas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/reset-senha" element={<ResetSenha />} />
 
             {/* Rotas privadas */}
             <Route

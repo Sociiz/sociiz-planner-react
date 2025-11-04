@@ -53,6 +53,17 @@ export default function Login() {
                             />
                         </div>
 
+                        <div className="flex justify-center text-base">
+                            <Button
+                                type="button"
+                                variant={"outline"}
+                                onClick={() => navigate("/reset-senha")}
+                                className="cursor-pointer"
+                            >
+                                Esqueceu sua senha? Clique aqui
+                            </Button>
+                        </div>
+
                         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
                         <Button type="submit" className="w-full text-white">
