@@ -49,9 +49,10 @@ type TaskFormData = {
 interface TaskDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSubmit: (task: Task) => void;
+    onSubmit?: (task: Task) => void;
     editingTask?: Task | null;
-    Usuarios: IUser[];
+    Usuarios?: IUser[];
+    initialData?: Partial<Task>
 }
 
 export const TaskDialog: React.FC<TaskDialogProps> = ({
@@ -59,6 +60,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     onOpenChange,
     onSubmit,
     editingTask,
+    initialData
 }) => {
     const { user } = useAuth();
     const initialDataLoaded = useRef(false);
@@ -80,6 +82,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         priority: "Média",
     });
 
+    const [, setDescription] = useState<string>(initialData?.description || "");
     const [statusList, setStatusList] = useState<IStatus[]>([]);
     const [clients, setClients] = useState<IClient[]>([]);
     const [projects, setProjects] = useState<IProject[]>([]);
@@ -107,6 +110,12 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     const [editingContent, setEditingContent] = useState("");
     const [loadingComments, setLoadingComments] = useState(false);
     const [sendingComment, setSendingComment] = useState(false);
+
+    useEffect(() => {
+        if (initialData) {
+            setDescription(initialData.description || "");
+        }
+    }, [initialData]);
 
     useEffect(() => {
         if (open && !initialDataLoaded.current) {
@@ -155,7 +164,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
         } else {
             setFormData({
                 title: "",
-                description: "",
+                description: initialData?.description || "",
                 status: "todo",
                 evaluationStatus: "pending",
                 createdBy: user?.id || "",
@@ -170,7 +179,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             });
             setComments([]);
         }
-    }, [editingTask, open, user?.id]);
+    }, [editingTask, open, user?.id, initialData]);
 
     useEffect(() => {
         if (commentsEndRef.current && comments.length > 0) {
@@ -332,7 +341,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             dueDate: formData.dueDate,
         };
 
-        onSubmit(newTask);
+        onSubmit?.(newTask);
         onOpenChange(false);
     };
 

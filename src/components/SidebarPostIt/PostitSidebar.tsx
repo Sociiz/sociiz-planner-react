@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, AlertCircle, Clipboard } from 'lucide-react';
-import { type Note } from '../../types/types';
+import { type Note, type Task } from '../../types/types';
 import { NoteService } from '../../services/noteService';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import MarkdownViewer from '../MarkDownViewer';
 import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
+import { TaskDialog } from '../TaskDialog/TaskDialog';
+import { TaskService } from '@/services/taskService';
 
 interface PostItSidebarProps {
     isOpen?: boolean;
@@ -30,6 +32,9 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
     const [editContent, setEditContent] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [openTaskDialog, setopenTaskDialog] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [initalTaskData, setinitalTaskData] = useState<any>(null);
 
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id?: string }>({
         open: false,
@@ -117,6 +122,17 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
             e.preventDefault();
             handleAddNote();
         }
+    };
+
+    // Converter nota em tarefa
+    const convertTask = (note: Note) => {
+        setinitalTaskData(note.content);
+        setopenTaskDialog(true);
+    }
+
+    const handleConvertToTask = (newTask: Task) => {
+        TaskService.create(newTask);
+        setopenTaskDialog(false);
     };
 
     if (!isOpen) return null;
@@ -220,7 +236,7 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
                                     <>
                                         <div className="flex gap-2 justify-end mb-2">
                                             <Button
-                                                // onClick={() => startEditing(note)}
+                                                onClick={() => convertTask(note)}
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 hover:bg-black/10 text-black"
@@ -280,6 +296,18 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
                     )}
                 </div>
             </div>
+
+            {/* Chamando modal TaskDialog */}
+            {openTaskDialog && (
+                <TaskDialog
+                    open={openTaskDialog}
+                    onOpenChange={setopenTaskDialog}
+                    initialData={{
+                        description: initalTaskData
+                    }}
+                    onSubmit={handleConvertToTask}
+                />
+            )}
 
             {/* Modal de exclusão */}
             <ConfirmDeleteModal
