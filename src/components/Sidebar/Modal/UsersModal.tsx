@@ -15,6 +15,7 @@ interface User {
     email: string;
     password?: string;
     isAdmin: boolean;
+    isColaborador: boolean
 }
 
 interface UsersModalProps {
@@ -31,6 +32,7 @@ export function UsersModal({ open, onClose }: UsersModalProps) {
         email: "",
         password: "",
         isAdmin: false,
+        isColaborador: false,
     });
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ export function UsersModal({ open, onClose }: UsersModalProps) {
             } else {
                 await api.post("/users", formData);
             }
-            setFormData({ username: "", email: "", password: "", isAdmin: false });
+            setFormData({ username: "", email: "", password: "", isAdmin: false, isColaborador: false });
             setEditingUser(null);
             fetchUsers();
         } catch (err) {
@@ -85,6 +87,7 @@ export function UsersModal({ open, onClose }: UsersModalProps) {
             email: u.email,
             password: "",
             isAdmin: u.isAdmin,
+            isColaborador: u.isColaborador
         });
     };
 
@@ -152,7 +155,7 @@ export function UsersModal({ open, onClose }: UsersModalProps) {
                                     />
                                 </div>
 
-                                <div className="flex items-center space-x-2">
+                                <div className="flex flex-row gap-3">
                                     <Checkbox
                                         id="isAdmin"
                                         checked={formData.isAdmin}
@@ -161,6 +164,14 @@ export function UsersModal({ open, onClose }: UsersModalProps) {
                                         }
                                     />
                                     <Label htmlFor="isAdmin">Administrador</Label>
+                                    <Checkbox
+                                        id="isColaborador"
+                                        checked={formData.isColaborador}
+                                        onCheckedChange={(checked) =>
+                                            setFormData({ ...formData, isColaborador: checked as boolean })
+                                        }
+                                    />
+                                    <Label htmlFor="isColaborador">Colaborador</Label>
                                 </div>
 
                                 <Button type="submit" className="w-full text-white" disabled={loading}>
