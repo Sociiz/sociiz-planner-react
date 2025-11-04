@@ -14,7 +14,8 @@ import {
     type IProduct,
     type Itag,
     type Priority,
-    type IColaborador,
+    type IUser,
+    // type IColaborador,
 } from "@/types/types";
 import { TaskFormField } from "./TaskFormField";
 import { TaskSelect } from "./TaskSelect";
@@ -24,9 +25,10 @@ import { ClientService } from "@/services/clientService";
 import { ProjectService } from "@/services/projectService";
 import { ProductService } from "@/services/productService";
 import { tagService } from "@/services/tagService";
-import { ColaboradorService } from "@/services/colaboradorService";
+// import { ColaboradorService } from "@/services/colaboradorService";
 import { statusService } from "@/services/statusService";
 import { commentService, type IComment } from "@/services/commentService";
+import { userService } from "@/services/userService";
 
 type TaskFormData = {
     title: string;
@@ -49,7 +51,7 @@ interface TaskDialogProps {
     onOpenChange: (open: boolean) => void;
     onSubmit: (task: Task) => void;
     editingTask?: Task | null;
-    colaboradores: IColaborador[];
+    Usuarios: IUser[];
 }
 
 export const TaskDialog: React.FC<TaskDialogProps> = ({
@@ -83,7 +85,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     const [projects, setProjects] = useState<IProject[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
     const [tags, setTags] = useState<Itag[]>([]);
-    const [colaborador, setColaborador] = useState<IColaborador[]>([]);
+    const [usuarios, setUsuarios] = useState<IUser[]>([]);
     const [loadingData, setLoadingData] = useState(false);
 
     const [creatingClient, setCreatingClient] = useState(false);
@@ -179,13 +181,13 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     const fetchAllData = async () => {
         setLoadingData(true);
         try {
-            const [clientsData, projectsData, productsData, tagsData, colaboradorData, statusData] =
+            const [clientsData, projectsData, productsData, tagsData, userData, statusData] =
                 await Promise.all([
                     ClientService.getAll(),
                     ProjectService.getAll(),
                     ProductService.getAll(),
                     tagService.getAll(),
-                    ColaboradorService.getAll(),
+                    userService.getAll(),
                     statusService.getAll(),
                 ]);
 
@@ -193,7 +195,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             setProjects(projectsData);
             setProducts(productsData);
             setTags(tagsData);
-            setColaborador(colaboradorData);
+            setUsuarios(userData);
             setStatusList(statusData);
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
@@ -328,16 +330,15 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
             assignedTo: formData.assignedToInput,
             subtasks: formData.subtasksInputArray,
             dueDate: formData.dueDate,
-            colaborador: ""
         };
 
         onSubmit(newTask);
         onOpenChange(false);
     };
 
-    const colaboradoresAsUsers = colaborador.map((c) => ({
-        _id: c._id || "",
-        username: c.name || "",
+    const Users = usuarios.map((u) => ({
+        _id: u._id || "",
+        username: u.username || "",
     }));
 
     const renderEntityField = (
@@ -553,9 +554,9 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                         <TaskSelect
                                             label="Atribuir a"
                                             value={formData.assignedToInput}
-                                            options={colaborador.map((c) => ({
-                                                label: c.name,
-                                                value: c._id || "",
+                                            options={Users.map((u) => ({
+                                                label: u.username,
+                                                value: u._id || "",
                                             }))}
                                             onChange={(v) => handleChange("assignedToInput", v as string[])}
                                             multiple
@@ -571,7 +572,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                                                     key={index}
                                                     index={index}
                                                     subtask={subtask}
-                                                    users={colaboradoresAsUsers}
+                                                    users={Users}
                                                     onUpdate={(i, updated) => {
                                                         const newSubtasks = [...formData.subtasksInputArray];
                                                         newSubtasks[i] = updated;
@@ -766,7 +767,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
                 <AssignModal
                     open={subtaskAssignIndex !== null}
                     onOpenChange={() => setSubtaskAssignIndex(null)}
-                    users={colaboradoresAsUsers}
+                    users={Users}
                     assignedUsers={
                         formData.subtasksInputArray[subtaskAssignIndex]?.assignedTo || []
                     }

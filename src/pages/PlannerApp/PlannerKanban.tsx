@@ -13,7 +13,7 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "@/components/Column";
 import { SortableTaskCard } from "@/components/SortableTaskCard";
-import { type Task, type Colaborador, type IStatus } from "@/types/types";
+import { type Task, type IUser, type IStatus } from "@/types/types";
 import { useAuth } from "@/context/authContext";
 
 interface PlannerKanbanProps {
@@ -22,9 +22,9 @@ interface PlannerKanbanProps {
     openDialog: (task?: Task | null) => void;
     activeId: string | null;
     setActiveId: (id: string | null) => void;
-    colaboradores: Colaborador[];
+    usuarios: IUser[];
     onRequestDelete?: (task: Task) => void;
-    viewMode: "status" | "colaborador";
+    viewMode: "status" | "usuarios";
 }
 
 export function PlannerKanban({
@@ -33,7 +33,7 @@ export function PlannerKanban({
     openDialog,
     activeId,
     setActiveId,
-    colaboradores,
+    usuarios,
     onRequestDelete,
     viewMode,
 }: PlannerKanbanProps) {
@@ -165,21 +165,21 @@ export function PlannerKanban({
                                 color={status.color ?? "bg-gray-200"}
                                 tasks={getTasksByStatus(status._id)}
                                 onTaskClick={openDialog}
-                                colaboradores={colaboradores}
+                                usuarios={usuarios}
                                 onRequestDelete={onRequestDelete}
                             />
                         ))
-                        : [...colaboradores]
-                            .sort((a, b) => a.name.localeCompare(b.name))
+                        : [...usuarios]
+                            .sort((a, b) => a.username.localeCompare(b.username))
                             .map((colab) => (
                                 <Column
                                     key={colab._id}
                                     id={colab._id}
-                                    title={colab.name}
+                                    title={colab.username}
                                     color="bg-green-200"
                                     tasks={getTasksByColaborador(colab._id)}
                                     onTaskClick={openDialog}
-                                    colaboradores={colaboradores}
+                                    usuarios={usuarios}
                                     onRequestDelete={onRequestDelete}
                                 />
                             ))}
@@ -189,7 +189,7 @@ export function PlannerKanban({
                     {activeTask && (
                         <SortableTaskCard
                             task={activeTask}
-                            colaboradores={colaboradores}
+                            usuarios={usuarios}
                             onRequestDelete={onRequestDelete}
                         />
                     )}

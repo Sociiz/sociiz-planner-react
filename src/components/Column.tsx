@@ -2,7 +2,7 @@ import React from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { SortableTaskCard } from "./SortableTaskCard";
-import { type Task, type Colaborador } from "@/types/types";
+import { type Task, type IUser } from "@/types/types";
 
 interface ColumnProps {
     id: string;
@@ -10,7 +10,7 @@ interface ColumnProps {
     color: string;
     tasks: Task[];
     onTaskClick: (task: Task) => void;
-    colaboradores: Colaborador[];
+    usuarios: IUser[];
     onRequestDelete?: (task: Task) => void;
 }
 
@@ -20,7 +20,7 @@ export const Column: React.FC<ColumnProps> = ({
     color,
     tasks,
     onTaskClick,
-    colaboradores,
+    usuarios,
     onRequestDelete
 }) => {
     const { setNodeRef } = useDroppable({ id: `column-${id}` });
@@ -46,7 +46,7 @@ export const Column: React.FC<ColumnProps> = ({
                             key={task._id}
                             task={task}
                             onMoreClick={onTaskClick}
-                            colaboradores={colaboradores}
+                            usuarios={usuarios}
                             onRequestDelete={onRequestDelete}
                         />
                     ))}

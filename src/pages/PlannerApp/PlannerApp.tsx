@@ -36,11 +36,11 @@ export default function PlannerApp() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [activeId, setActiveId] = useState<string | null>(null);
-    const [colaboradores, setColaboradores] = useState<{ _id: string; name: string }[]>([]);
+    const [usuarios, setUsuarios] = useState<{ _id: string; username: string }[]>([]);
     const [confirmDeleteTask, setConfirmDeleteTask] = useState<Task | null>(null);
 
-    const [viewMode, setViewMode] = useState<"status" | "colaborador">(
-        () => (localStorage.getItem("kanbanViewMode") as "status" | "colaborador") || "status"
+    const [viewMode, setViewMode] = useState<"status" | "usuarios">(
+        () => (localStorage.getItem("kanbanViewMode") as "status" | "usuarios") || "status"
     );
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -103,26 +103,26 @@ export default function PlannerApp() {
     const handleCancelDelete = () => setConfirmDeleteTask(null);
 
     useEffect(() => {
-        const fetchColaboradores = async () => {
+        const fetchUsers = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/colaboradores`, {
+                const response = await fetch(`${API_BASE_URL}/users`, {
                     headers: {
                         "Authorization": `Bearer ${token}`,
                         "Content-Type": "application/json"
                     }
                 });
 
-                if (!response.ok) throw new Error("Erro ao buscar colaboradores");
+                if (!response.ok) throw new Error("Erro ao buscar usuarios");
 
                 const data = await response.json();
-                setColaboradores(data);
+                setUsuarios(data);
             } catch (err) {
-                console.error("Erro ao buscar colaboradores:", err);
+                console.error("Erro ao buscar usuarios:", err);
             }
         };
 
         refreshTasks();
-        fetchColaboradores();
+        fetchUsers();
     }, [token, API_BASE_URL]);
 
     useEffect(() => {
@@ -231,7 +231,7 @@ export default function PlannerApp() {
         return Array.from(new Set(values));
     };
 
-    const assignedToOptions: FilterOption[] = colaboradores.map((u) => ({ id: u._id, label: u.name }));
+    const assignedToOptions: FilterOption[] = usuarios.map((u) => ({ id: u._id, label: u.username }));
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
@@ -261,7 +261,7 @@ export default function PlannerApp() {
                         openDialog={openDialog}
                         activeId={activeId}
                         setActiveId={setActiveId}
-                        colaboradores={colaboradores}
+                        usuarios={usuarios}
                         onRequestDelete={handleRequestDelete}
                     />
                 </main>
@@ -271,7 +271,7 @@ export default function PlannerApp() {
                     onOpenChange={setIsDialogOpen}
                     onSubmit={handleSubmit}
                     editingTask={editingTask}
-                    colaboradores={colaboradores}
+                    Usuarios={usuarios}
                 />
 
                 <Dialog open={!!confirmDeleteTask} onOpenChange={handleCancelDelete}>

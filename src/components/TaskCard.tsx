@@ -12,7 +12,7 @@ import {
     Users,
     Trash2,
 } from 'lucide-react';
-import { type Task, type IColaborador } from '../types/types';
+import { type Task, type IUser } from '../types/types';
 
 interface TaskCardProps {
     task: Task & {
@@ -20,7 +20,7 @@ interface TaskCardProps {
         projectImages?: string[];
         productImages?: string[];
     };
-    colaboradores: IColaborador[];
+    usuarios: IUser[];
     onMoreClick?: (task: Task) => void;
     onRequestDelete?: (task: Task) => void;
     dragHandleProps?: React.SVGProps<SVGSVGElement>;
@@ -28,14 +28,14 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({
     task,
-    colaboradores,
+    usuarios,
     onMoreClick,
     onRequestDelete,
     dragHandleProps,
 }) => {
-    const assignedColaboradores = task.assignedTo
-        ?.map((id) => colaboradores.find((c) => c._id === id))
-        .filter(Boolean) as IColaborador[];
+    const assignedUsers = task.assignedTo
+        ?.map((id) => usuarios.find((u) => u._id === id))
+        .filter(Boolean) as IUser[];
 
     const renderArrayField = (items: string[] | undefined, Icon: React.ElementType, label: string) => {
         if (!items || items.length === 0) return null;
@@ -167,13 +167,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 )}
 
                 <div className="flex items-center justify-between pt-2 border-t dark:border-slate-700">
-                    {assignedColaboradores && assignedColaboradores.length > 0 ? (
+                    {assignedUsers && assignedUsers.length > 0 ? (
                         <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 flex-wrap">
                             <UserIcon className="w-3 h-3" />
-                            {assignedColaboradores.map((colaborador, idx) => (
-                                <span key={colaborador._id}>
-                                    {colaborador.name}
-                                    {idx < assignedColaboradores.length - 1 ? ',' : ''}
+                            {assignedUsers.map((user, idx) => (
+                                <span key={user._id}>
+                                    {user.username}
+                                    {idx < assignedUsers.length - 1 ? ',' : ''}
                                 </span>
                             ))}
                         </div>

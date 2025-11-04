@@ -16,8 +16,8 @@ interface PlannerHeaderProps {
     assignedToOptions: FilterOption[];
     tagsOptions: string[];
     prioritiesOptions: string[];
-    viewMode: "status" | "colaborador";
-    setViewMode: (mode: "status" | "colaborador") => void;
+    viewMode: "status" | "usuarios";
+    setViewMode: (mode: "status" | "usuarios") => void;
     onToggleSidebar?: () => void;
 }
 
@@ -66,11 +66,11 @@ export function PlannerHeader({
                             variant="outline"
                             size="icon"
                             onClick={() =>
-                                setViewMode(viewMode === "status" ? "colaborador" : "status")
+                                setViewMode(viewMode === "status" ? "usuarios" : "status")
                             }
                             title={
                                 viewMode === "status"
-                                    ? "Visualizar por colaborador"
+                                    ? "Visualizar por usuarios"
                                     : "Visualizar por status"
                             }
                         >
