@@ -13,8 +13,10 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Column } from "@/components/Column";
 import { SortableTaskCard } from "@/components/SortableTaskCard";
-import { type Task, type IUser, type IStatus } from "@/types/types";
+import { FilterPanel } from "@/components/FilterPanel";
+import { type Task, type IUser, type IStatus, type FilterOption } from "@/types/types";
 import { useAuth } from "@/context/authContext";
+import type { Filters } from "./PlannerApp";
 
 interface PlannerKanbanProps {
     tasks: Task[];
@@ -25,6 +27,15 @@ interface PlannerKanbanProps {
     usuarios: IUser[];
     onRequestDelete?: (task: Task) => void;
     viewMode: "status" | "usuarios";
+    filters: Filters;
+    setFilters: (filters: Filters) => void;
+    clientsOptions: string[];
+    projectsOptions: string[];
+    productsOptions: string[];
+    assignedToOptions: FilterOption[];
+    tagsOptions: string[];
+    prioritiesOptions: string[];
+    isAdmin: boolean;
 }
 
 export function PlannerKanban({
@@ -36,6 +47,15 @@ export function PlannerKanban({
     usuarios,
     onRequestDelete,
     viewMode,
+    filters,
+    setFilters,
+    clientsOptions,
+    projectsOptions,
+    productsOptions,
+    assignedToOptions,
+    tagsOptions,
+    prioritiesOptions,
+    isAdmin,
 }: PlannerKanbanProps) {
     const [statusList, setStatusList] = useState<IStatus[]>([]);
     const { token } = useAuth();
@@ -149,6 +169,20 @@ export function PlannerKanban({
 
     return (
         <div className="flex flex-col h-full">
+            <div className="flex-shrink-0 px-6 py-4">
+                <FilterPanel
+                    filters={filters}
+                    setFilters={setFilters}
+                    clientsOptions={clientsOptions}
+                    projectsOptions={projectsOptions}
+                    productsOptions={productsOptions}
+                    assignedToOptions={assignedToOptions}
+                    tagsOptions={tagsOptions}
+                    prioritiesOptions={prioritiesOptions}
+                    isAdmin={isAdmin}
+                />
+            </div>
+
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}

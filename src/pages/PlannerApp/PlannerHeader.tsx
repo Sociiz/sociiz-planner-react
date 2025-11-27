@@ -1,25 +1,14 @@
 import { Sun, Moon, Plus, LogOut, Menu, Layout, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FilterPanel } from "@/components/FilterPanel";
-import type { Filters, FilterOption } from "@/types/types";
 
 interface PlannerHeaderProps {
     theme: string;
     setTheme: (theme: string) => void;
     onNewTask: () => void;
     onLogout: () => void;
-    filters: Filters;
-    setFilters: (filters: Filters) => void;
-    clientsOptions: string[];
-    projectsOptions: string[];
-    productsOptions: string[];
-    assignedToOptions: FilterOption[];
-    tagsOptions: string[];
-    prioritiesOptions: string[];
     viewMode: "status" | "usuarios";
     setViewMode: (mode: "status" | "usuarios") => void;
     onToggleSidebar?: () => void;
-    isAdmin?: boolean; // ADICIONE ESTA LINHA AQUI NA INTERFACE
 }
 
 export function PlannerHeader({
@@ -27,25 +16,16 @@ export function PlannerHeader({
     setTheme,
     onNewTask,
     onLogout,
-    filters,
-    setFilters,
-    clientsOptions,
-    projectsOptions,
-    productsOptions,
-    assignedToOptions,
-    tagsOptions,
-    prioritiesOptions,
     viewMode,
     setViewMode,
     onToggleSidebar,
-    isAdmin = false, // E AQUI NA DESESTRUTURAÇÃO COM VALOR PADRÃO
 }: PlannerHeaderProps) {
     const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
     return (
-        <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b shadow-sm z-10">
+        <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b shadow-sm z-10 overflow-hidden">
             <div className="px-6 py-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         {onToggleSidebar && (
                             <Button
@@ -106,18 +86,6 @@ export function PlannerHeader({
                         </Button>
                     </div>
                 </div>
-
-                <FilterPanel
-                    filters={filters}
-                    setFilters={setFilters}
-                    clientsOptions={clientsOptions}
-                    projectsOptions={projectsOptions}
-                    productsOptions={productsOptions}
-                    assignedToOptions={assignedToOptions}
-                    tagsOptions={tagsOptions}
-                    prioritiesOptions={prioritiesOptions}
-                    isAdmin={isAdmin}
-                />
             </div>
         </div>
     );

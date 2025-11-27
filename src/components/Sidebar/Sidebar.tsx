@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import { SidebarItem } from "./SidebarItem";
 import { ClientModal } from "./Modal/ClienteModal";
@@ -19,30 +18,12 @@ export function Sidebar() {
 
     return (
         <>
-            {/* MOBILE - Sheet Drawer */}
-            <div className="md:hidden">
-                <Sheet>
-                    <SheetTrigger asChild>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="fixed top-4 left-4 z-50"
-                        >
-                            <Menu className="w-5 h-5" />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="p-4 w-64">
-                        <SidebarContent setOpenModal={setOpenModal} />
-                    </SheetContent>
-                </Sheet>
-            </div>
-
             {/* DESKTOP - Sidebar Fixa */}
             <aside
                 className={`hidden md:flex flex-col h-screen flex-shrink-0 border-r bg-white dark:bg-slate-900 transition-all duration-300 ${isOpen ? "w-64" : "w-16"
                     }`}
             >
-                <div className="flex justify-end p-2 border-b flex-shrink-0">
+                <div className="flex justify-end p-4 border-b flex-shrink-0">
                     <Button
                         variant="outline"
                         size="icon"

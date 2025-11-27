@@ -96,7 +96,6 @@ export default function PlannerApp() {
                 method: "DELETE",
                 headers: {
                     "Authorization": `Bearer ${token}`,
-
                 }
             });
 
@@ -252,17 +251,8 @@ export default function PlannerApp() {
                     setTheme={handleThemeChange}
                     onNewTask={() => openDialog(null)}
                     onLogout={() => { logout(); navigate("/login"); }}
-                    filters={filters}
-                    setFilters={setFilters}
-                    clientsOptions={getUniqueValues(tasks, "client")}
-                    projectsOptions={getUniqueValues(tasks, "project")}
-                    productsOptions={getUniqueValues(tasks, "product")}
-                    assignedToOptions={assignedToOptions}
-                    tagsOptions={getUniqueValues(tasks, "tags")}
-                    prioritiesOptions={["Baixa", "Média", "Alta", "Urgente"]}
                     viewMode={viewMode}
                     setViewMode={setViewMode}
-                    isAdmin={user?.isAdmin || user?.isColaborador || false}
                     onToggleSidebar={toggleSidebar}
                 />
 
@@ -276,6 +266,15 @@ export default function PlannerApp() {
                         setActiveId={setActiveId}
                         usuarios={usuarios}
                         onRequestDelete={handleRequestDelete}
+                        filters={filters}
+                        setFilters={setFilters}
+                        clientsOptions={getUniqueValues(tasks, "client")}
+                        projectsOptions={getUniqueValues(tasks, "project")}
+                        productsOptions={getUniqueValues(tasks, "product")}
+                        assignedToOptions={assignedToOptions}
+                        tagsOptions={getUniqueValues(tasks, "tags")}
+                        prioritiesOptions={["Baixa", "Média", "Alta", "Urgente"]}
+                        isAdmin={user?.isAdmin || user?.isColaborador || false}
                     />
                 </main>
 
@@ -309,4 +308,4 @@ export default function PlannerApp() {
             )}
         </div>
     );
-};
+}
