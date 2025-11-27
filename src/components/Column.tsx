@@ -26,8 +26,8 @@ export const Column: React.FC<ColumnProps> = ({
     const { setNodeRef } = useDroppable({ id: `column-${id}` });
 
     return (
-        <div className="flex flex-col shrink-0 h-[46rem] w-[280px] max-w-[280px] bg-slate-50 dark:bg-slate-800 rounded-lg shadow-md">
-            <div className={`${color} text-black px-4 py-3 rounded-t-lg`}>
+        <div className="flex flex-col shrink-0 w-[280px] h-[500px] bg-slate-50 dark:bg-slate-800 rounded-lg shadow-md">
+            <div className={`${color} text-black px-4 py-3 rounded-t-lg flex-shrink-0`}>
                 <h2 className="font-semibold flex items-center justify-between">
                     <span>{title}</span>
                     <span className="text-sm bg-white/20 px-2 py-1 rounded">
@@ -38,7 +38,7 @@ export const Column: React.FC<ColumnProps> = ({
 
             <div
                 ref={setNodeRef}
-                className="flex-1 overflow-y-auto h-full p-4 space-y-3 rounded-b-lg scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700"
+                className="flex-1 overflow-y-auto p-4 space-y-3 rounded-b-lg min-h-0"
             >
                 <SortableContext items={tasks.map((t) => t._id!)} strategy={verticalListSortingStrategy}>
                     {tasks.map((task) => (

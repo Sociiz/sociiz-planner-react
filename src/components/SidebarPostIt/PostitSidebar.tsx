@@ -139,7 +139,7 @@ export const PostItSidebar: React.FC<PostItSidebarProps> = ({
 
     return (
         <>
-            <div className="h-screen w-96 bg-gray-50 border-l border-gray-200 shadow-xl flex flex-col shrink-0">
+            <div className="w-85 h-screen flex-shrink-0 bg-gray-50 border-l border-gray-200 shadow-xl flex flex-col">
                 <div className="bg-gradient-to-r from-yellow-300 via-orange-300 to-orange-400 p-6 flex items-center justify-between rounded-b-lg shadow-md">
                     <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                         📌 Anotações

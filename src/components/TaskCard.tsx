@@ -56,7 +56,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     };
 
     return (
-        <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-blue-500">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-blue-500" onClick={() => onMoreClick?.(task)}>
             <div className="flex m-2 shrink-0 justify-between items-center gap-2 mb-2">
                 {task.clientImages?.map((url, idx) => url && (
                     <img

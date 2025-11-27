@@ -244,8 +244,9 @@ export default function PlannerApp() {
     const assignedToOptions: FilterOption[] = usuarios.map((u) => ({ id: u._id, label: u.username }));
 
     return (
-        <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-colors">
-            <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 min-w-0">
+            {/* Área Principal (Kanban) */}
+            <div className="flex-1 flex flex-col min-w-0">
                 <PlannerHeader
                     theme={theme}
                     setTheme={handleThemeChange}
@@ -262,9 +263,10 @@ export default function PlannerApp() {
                     viewMode={viewMode}
                     setViewMode={setViewMode}
                     isAdmin={user?.isAdmin || user?.isColaborador || false}
+                    onToggleSidebar={toggleSidebar}
                 />
 
-                <main className="flex-1 overflow-y-auto p-4">
+                <main className="flex-1 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
                     <PlannerKanban
                         viewMode={viewMode}
                         tasks={filteredTasks}

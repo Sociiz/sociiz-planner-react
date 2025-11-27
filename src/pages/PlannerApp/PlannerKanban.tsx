@@ -148,41 +148,44 @@ export function PlannerKanban({
     const activeTask = activeId ? tasks.find((t) => t._id === activeId) : null;
 
     return (
-        <div className="container mx-auto px-6 py-8">
+        <div className="flex flex-col h-full">
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCorners}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex gap-6 overflow-x-auto pb-4">
-                    {viewMode === "status"
-                        ? statusList.map((status) => (
-                            <Column
-                                key={status._id}
-                                id={status._id}
-                                title={status.name}
-                                color={status.color ?? "bg-gray-200"}
-                                tasks={getTasksByStatus(status._id)}
-                                onTaskClick={openDialog}
-                                usuarios={usuarios}
-                                onRequestDelete={onRequestDelete}
-                            />
-                        ))
-                        : [...usuarios]
-                            .sort((a, b) => a.username.localeCompare(b.username))
-                            .map((colab) => (
+                {/* Container com rolagem horizontal SEMPRE VISÍVEL */}
+                <div className="flex-1 overflow-x-scroll overflow-y-hidden px-6 py-6">
+                    <div className="flex gap-6 h-full">
+                        {viewMode === "status"
+                            ? statusList.map((status) => (
                                 <Column
-                                    key={colab._id}
-                                    id={colab._id}
-                                    title={colab.username}
-                                    color="bg-green-200"
-                                    tasks={getTasksByColaborador(colab._id)}
+                                    key={status._id}
+                                    id={status._id}
+                                    title={status.name}
+                                    color={status.color ?? "bg-gray-200"}
+                                    tasks={getTasksByStatus(status._id)}
                                     onTaskClick={openDialog}
                                     usuarios={usuarios}
                                     onRequestDelete={onRequestDelete}
                                 />
-                            ))}
+                            ))
+                            : [...usuarios]
+                                .sort((a, b) => a.username.localeCompare(b.username))
+                                .map((colab) => (
+                                    <Column
+                                        key={colab._id}
+                                        id={colab._id}
+                                        title={colab.username}
+                                        color="bg-green-200"
+                                        tasks={getTasksByColaborador(colab._id)}
+                                        onTaskClick={openDialog}
+                                        usuarios={usuarios}
+                                        onRequestDelete={onRequestDelete}
+                                    />
+                                ))}
+                    </div>
                 </div>
 
                 <DragOverlay>

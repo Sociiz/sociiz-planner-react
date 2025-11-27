@@ -433,7 +433,7 @@ export const TaskDialog: React.FC<TaskDialogProps> = ({
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="!max-w-[90rem] max-h-[90vh] overflow-hidden rounded-2xl p-0">
+                <DialogContent className="!max-w-[70rem] max-h-[90vh] overflow-hidden rounded-2xl p-0">
                     <div className="flex h-[90vh]">
                         {/* Coluna Principal - Formulário */}
                         <div className="flex-1 overflow-y-auto p-6">

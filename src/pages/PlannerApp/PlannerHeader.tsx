@@ -43,8 +43,8 @@ export function PlannerHeader({
     const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
     return (
-        <div className="bg-white dark:bg-slate-900 border-b shadow-sm">
-            <div className="container mx-auto px-6 py-4">
+        <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b shadow-sm z-10">
+            <div className="px-6 py-4">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         {onToggleSidebar && (
