@@ -9,35 +9,38 @@ import RegisterPage from "@/pages/Register/Register";
 import PlannerApp from "./pages/PlannerApp/PlannerApp";
 import { AppLayout } from "./components/AppLayout";
 import { ResetSenha } from "./pages/ResetSenha/ResetSenha";
+import { PlannerProvider } from "./context/PlannerProvider";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Rotas públicas */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/reset-senha" element={<ResetSenha />} />
+        <PlannerProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Rotas públicas */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/reset-senha" element={<ResetSenha />} />
 
-            {/* Rotas privadas */}
-            <Route
-              path="/planner"
-              element={
-                <PrivateRoute>
-                  <AppLayout>
-                    <PlannerApp />
-                  </AppLayout>
-                </PrivateRoute>
-              }
-            />
+              {/* Rotas privadas */}
+              <Route
+                path="/planner"
+                element={
+                  <PrivateRoute>
+                    <AppLayout>
+                      <PlannerApp />
+                    </AppLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route path="*" element={<Login />} />
-          </Routes>
+              <Route path="*" element={<Login />} />
+            </Routes>
 
-          <TokenRefreshModal />
-        </BrowserRouter>
+            <TokenRefreshModal />
+          </BrowserRouter>
+        </PlannerProvider>
       </AuthProvider>
     </ThemeProvider>
   );
