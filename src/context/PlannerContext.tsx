@@ -14,17 +14,39 @@ export type Filters = {
 export type ViewMode = "status" | "usuarios";
 
 export interface PlannerContextType {
-    // Tasks
     tasks: Task[];
     filteredTasks: Task[];
     setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
     refreshTasks: () => Promise<void>;
 
-    // Filtros
     filters: Filters;
     setFilters: React.Dispatch<React.SetStateAction<Filters>>;
 
-    // Get Filtros
+    usuarios: { _id: string; username: string }[];
+
+    viewMode: ViewMode;
+    setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
+    toggleViewMode: () => void;
+
+    isDialogOpen: boolean;
+    setIsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    editingTask: Task | null;
+    openDialog: (task?: Task | null) => void;
+    handleNewTask: () => void;
+
+    confirmDeleteTask: Task | null;
+    handleRequestDelete: (task: Task) => void;
+    handleConfirmDelete: () => Promise<void>;
+    handleCancelDelete: () => void;
+
+    activeId: string | null;
+    setActiveId: React.Dispatch<React.SetStateAction<string | null>>;
+
+    isSidebarOpen: boolean;
+    toggleSidebar: () => void;
+
+    handleSubmit: (task: Task) => Promise<void>;
+
     getFilterOptions: () => {
         clientsOptions: string[];
         projectsOptions: string[];
@@ -33,36 +55,6 @@ export interface PlannerContextType {
         tagsOptions: string[];
         prioritiesOptions: string[];
     };
-
-    // Usuários
-    usuarios: { _id: string; username: string }[];
-
-    // View Mode
-    viewMode: ViewMode;
-    setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
-
-    // Dialog
-    isDialogOpen: boolean;
-    setIsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    editingTask: Task | null;
-    openDialog: (task?: Task | null) => void;
-
-    // Modal pra deletar
-    confirmDeleteTask: Task | null;
-    handleRequestDelete: (task: Task) => void;
-    handleConfirmDelete: () => Promise<void>;
-    handleCancelDelete: () => void;
-
-    // Drag and Drop
-    activeId: string | null;
-    setActiveId: React.Dispatch<React.SetStateAction<string | null>>;
-
-    // Sidebar
-    isSidebarOpen: boolean;
-    toggleSidebar: () => void;
-
-    handleSubmit: (task: Task) => Promise<void>;
-
 }
 
 export const PlannerContext = createContext<PlannerContextType | undefined>(undefined);

@@ -1,8 +1,5 @@
 import { useAuth } from "@/context/authContext";
-import { useNavigate } from "react-router-dom";
 import { TaskDialog } from "@/components/TaskDialog/TaskDialog";
-import { useTheme } from "@/components/theme-provider";
-import { type Theme } from "@/types/types";
 import { PlannerHeader } from "./PlannerHeader";
 import { PlannerKanban } from "./PlannerKanban";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,9 +8,7 @@ import { PostItSidebar } from "@/components/SidebarPostIt/PostitSidebar";
 import { usePlanner } from "@/context/PlannerContext";
 
 export default function PlannerApp() {
-    const { theme, setTheme } = useTheme();
-    const { logout, user } = useAuth();
-    const navigate = useNavigate();
+    const { user } = useAuth();
 
     const {
         filteredTasks,
@@ -22,7 +17,6 @@ export default function PlannerApp() {
         setFilters,
         usuarios,
         viewMode,
-        setViewMode,
         isDialogOpen,
         setIsDialogOpen,
         editingTask,
@@ -39,25 +33,13 @@ export default function PlannerApp() {
         getFilterOptions,
     } = usePlanner();
 
-    const handleThemeChange = (newTheme: string) => {
-        if (["light", "dark", "system"].includes(newTheme)) setTheme(newTheme as Theme);
-    };
-
     const filterOptions = getFilterOptions();
 
     return (
         <div className="flex flex-1 min-w-0">
             {/* Área Principal (Kanban) */}
             <div className="flex-1 flex flex-col min-w-0">
-                <PlannerHeader
-                    theme={theme}
-                    setTheme={handleThemeChange}
-                    onNewTask={() => openDialog(null)}
-                    onLogout={() => { logout(); navigate("/login"); }}
-                    viewMode={viewMode}
-                    setViewMode={setViewMode}
-                    onToggleSidebar={toggleSidebar}
-                />
+                <PlannerHeader />
 
                 <main className="flex-1 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
                     <PlannerKanban

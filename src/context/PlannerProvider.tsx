@@ -40,6 +40,12 @@ export const PlannerProvider = ({ children }: PlannerProviderProps) => {
         setIsDialogOpen(true);
     };
 
+    const handleNewTask = () => openDialog(null);
+
+    const toggleViewMode = () => {
+        setViewMode((prev) => (prev === "status" ? "usuarios" : "status"));
+    };
+
     const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
     const refreshTasks = async () => {
@@ -243,10 +249,12 @@ export const PlannerProvider = ({ children }: PlannerProviderProps) => {
         usuarios,
         viewMode,
         setViewMode,
+        toggleViewMode,
         isDialogOpen,
         setIsDialogOpen,
         editingTask,
         openDialog,
+        handleNewTask,
         confirmDeleteTask,
         handleRequestDelete,
         handleConfirmDelete,
