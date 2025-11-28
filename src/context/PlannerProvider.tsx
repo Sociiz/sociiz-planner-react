@@ -2,6 +2,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { useAuth } from "@/context/authContext";
 import { type Task } from "@/types/types";
 import { PlannerContext, type Filters, type ViewMode } from "./PlannerContext";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 
 interface PlannerProviderProps {
     children: ReactNode;
@@ -24,6 +25,7 @@ export const PlannerProvider = ({ children }: PlannerProviderProps) => {
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [usuarios, setUsuarios] = useState<{ _id: string; username: string }[]>([]);
+    const [statusList, setStatusList] = useState<{ _id: string; name: string; color?: string }[]>([]);
     const [confirmDeleteTask, setConfirmDeleteTask] = useState<Task | null>(null);
 
     const [viewMode, setViewMode] = useState<ViewMode>(
@@ -47,6 +49,68 @@ export const PlannerProvider = ({ children }: PlannerProviderProps) => {
     };
 
     const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string);
+    };
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        setActiveId(null);
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeTask = tasks.find((t) => t._id === active.id);
+        if (!activeTask) return;
+
+        let newField: string | null = null;
+
+        if (over.id.toString().startsWith("column-")) {
+            newField = over.id.toString().replace("column-", "");
+        } else {
+            const overTask = tasks.find((t) => t._id === over.id);
+            if (overTask) {
+                newField =
+                    viewMode === "status"
+                        ? overTask.status
+                        : Array.isArray(overTask.assignedTo)
+                            ? (overTask.assignedTo[0] ?? overTask.assignedTo[0])
+                            : overTask.assignedTo ?? overTask.assignedTo ?? null;
+            }
+        }
+
+        if (!newField) return;
+
+        const isSameField =
+            viewMode === "status"
+                ? activeTask.status === newField
+                : Array.isArray(activeTask.assignedTo)
+                    ? activeTask.assignedTo.some((a) => a === newField)
+                    : activeTask.assignedTo === newField;
+
+        if (isSameField) return;
+
+        const updatedTask: Task =
+            viewMode === "status"
+                ? { ...activeTask, status: newField }
+                : { ...activeTask, assignedTo: [newField] };
+
+        setTasks((prev) =>
+            prev.map((t) => (t._id === activeTask._id ? updatedTask : t))
+        );
+
+        try {
+            await fetch(`${API_BASE_URL}/tasks/${activeTask._id}`, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(updatedTask)
+            });
+        } catch (err) {
+            console.error("Erro ao atualizar task:", err);
+        }
+    };
 
     const refreshTasks = async () => {
         try {
@@ -168,7 +232,7 @@ export const PlannerProvider = ({ children }: PlannerProviderProps) => {
         prioritiesOptions: ["Baixa", "Média", "Alta", "Urgente"],
     });
 
-    // Fetch inicial de usuários
+    // Fetch inicial de usuários e status
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -188,8 +252,27 @@ export const PlannerProvider = ({ children }: PlannerProviderProps) => {
             }
         };
 
+        const fetchStatus = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/status`, {
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                if (!response.ok) throw new Error("Erro ao buscar status");
+
+                const data = await response.json();
+                setStatusList(data);
+            } catch (err) {
+                console.error("Erro ao buscar status:", err);
+            }
+        };
+
         refreshTasks();
         fetchUsers();
+        fetchStatus();
     }, [token, API_BASE_URL]);
 
     // Salvar viewMode no localStorage
@@ -247,6 +330,7 @@ export const PlannerProvider = ({ children }: PlannerProviderProps) => {
         filters,
         setFilters,
         usuarios,
+        statusList,
         viewMode,
         setViewMode,
         toggleViewMode,
@@ -261,10 +345,13 @@ export const PlannerProvider = ({ children }: PlannerProviderProps) => {
         handleCancelDelete,
         activeId,
         setActiveId,
+        handleDragStart,
+        handleDragEnd,
         isSidebarOpen,
         toggleSidebar,
         handleSubmit,
         getFilterOptions,
+        isAdmin: user?.isAdmin || user?.isColaborador || false,
     };
 
     return (
